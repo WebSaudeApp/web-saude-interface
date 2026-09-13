@@ -1,0 +1,27 @@
+# dependencies
+node_modules
+.pnp
+.pnp.js
+package-lock.json
+
+
+# next
+.next
+out
+
+# env
+.env
+.env.local
+.env.*.local
+
+# logs / cache
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.eslintcache
+
+# os / ide
+.DS_Store
+Thumbs.db
+.idea
+.vscode
