@@ -1,6 +1,11 @@
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { adminRoutes, managerRoutes, patientRoutes, publicRoutes } from "@/configs/Routes";
+import {
+  adminRoutes,
+  managerRoutes,
+  patientRoutes,
+  publicRoutes,
+} from "@/configs/Routes";
 import { useAuth } from "@/hooks/useAuth";
 
 const navLinks = [
@@ -40,7 +45,11 @@ export default function Header() {
             <Link
               key={link.href}
               href={link.href}
-              className={isActivePath(router.pathname, link.href) ? "is-active" : undefined}
+              className={
+                isActivePath(router.pathname, link.href)
+                  ? "is-active"
+                  : undefined
+              }
             >
               {link.label}
             </Link>

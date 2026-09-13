@@ -31,16 +31,16 @@ src/
 
 ## Rotas
 
-| Área | Caminho |
-| --- | --- |
-| Home | `/` |
-| Cidade | `/city` |
-| Resultados | `/units` |
-| Detalhe | `/units/[id]` |
-| Auth | `/login` `/register` `/verify-email` `/recover-password` |
-| Paciente | `/profile` `/favorites` `/reviews` |
-| Gestor | `/manager/units` `/manager/units/new` `/manager/units/[id]` |
-| Admin | `/admin` |
+| Área       | Caminho                                                     |
+| ---------- | ----------------------------------------------------------- |
+| Home       | `/`                                                         |
+| Cidade     | `/city`                                                     |
+| Resultados | `/units`                                                    |
+| Detalhe    | `/units/[id]`                                               |
+| Auth       | `/login` `/register` `/verify-email` `/recover-password`    |
+| Paciente   | `/profile` `/favorites` `/reviews`                          |
+| Gestor     | `/manager/units` `/manager/units/new` `/manager/units/[id]` |
+| Admin      | `/admin`                                                    |
 
 ## Como rodar
 
@@ -66,11 +66,11 @@ Mensagens no padrão `tipo(#issue): descrição curta em português`.
 
 O número entre parênteses é a issue. A descrição fica em minúsculas, sem ponto final.
 
-| Tipo | Quando usar |
-| --- | --- |
-| `feat` | funcionalidade nova |
-| `fix` | correção de bug |
-| `chore` | tarefa de manutenção |
+| Tipo       | Quando usar                       |
+| ---------- | --------------------------------- |
+| `feat`     | funcionalidade nova               |
+| `fix`      | correção de bug                   |
+| `chore`    | tarefa de manutenção              |
 | `refactor` | mudança sem alterar comportamento |
 
 Exemplos:

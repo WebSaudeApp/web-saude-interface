@@ -17,7 +17,11 @@ export default function UnidadesPage() {
       <h1>Resultados{city ? ` em ${city}` : ""}</h1>
       <SearchBar />
       <SearchFacetsSidebar />
-      <Pagination page={1} total={0} pageSize={Unidades.config.resultsPerPage} />
+      <Pagination
+        page={1}
+        total={0}
+        pageSize={Unidades.config.resultsPerPage}
+      />
     </>
   );
 }
