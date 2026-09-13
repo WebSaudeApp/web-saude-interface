@@ -83,3 +83,14 @@ refactor(#8): extrai serviço de autenticação
 ```
 
 Não usar `Closes #N` no corpo do commit, a menos que a issue peça isso.
+
+## GitHub Actions
+
+O workflow `.github/workflows/ci.yml` roda em push e pull request para `main`/`master`:
+
+1. `yarn install --frozen-lockfile`
+2. `yarn lint`
+3. `yarn format:check`
+4. `yarn build`
+
+O `yarn.lock` precisa estar no repositório. Sem ele o CI falha.
