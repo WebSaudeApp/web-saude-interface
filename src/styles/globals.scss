@@ -172,6 +172,11 @@ button {
   color: var(--teal);
 }
 
+.btn-lg {
+  min-height: 44px;
+  width: 100%;
+}
+
 .chip {
   display: inline-flex;
   align-items: center;
@@ -225,6 +230,35 @@ button {
 
 .input-icon .input {
   padding-left: 40px;
+}
+
+.help {
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.check input {
+  accent-color: var(--teal);
+}
+
+.label {
+  font-size: 0.82rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.center-note {
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.9rem;
 }
 
 .hero {
@@ -301,7 +335,8 @@ button {
   margin: 0;
 }
 
-.unit-card a {
+.unit-card a,
+.unit-row a {
   color: var(--teal);
   font-weight: 600;
   font-size: 0.9rem;
@@ -373,6 +408,88 @@ button {
 .footer-inner {
   color: var(--muted);
   font-size: 0.85rem;
+}
+
+.results-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 16px;
+  padding: 28px 0 18px;
+}
+
+.results-head .select {
+  max-width: 220px;
+}
+
+.results-layout {
+  display: grid;
+  grid-template-columns: 286px 1fr;
+  gap: 24px;
+}
+
+.filters {
+  padding: 22px;
+  display: grid;
+  gap: 16px;
+  align-content: start;
+}
+
+.filters h3 {
+  display: flex;
+  justify-content: space-between;
+  font-size: 1rem;
+}
+
+.filters h3 button {
+  color: var(--teal);
+  font-size: 0.8rem;
+}
+
+.filter-group {
+  display: grid;
+  gap: 8px;
+}
+
+.search-dock {
+  display: grid;
+  grid-template-columns: 1fr 260px auto;
+  gap: 10px;
+  padding: 22px 0 36px;
+}
+
+.unit-row {
+  display: grid;
+  grid-template-columns: 180px 1fr auto;
+  gap: 18px;
+  padding: 16px;
+  align-items: center;
+}
+
+.unit-row img {
+  width: 180px;
+  height: 132px;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+.unit-row-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.unit-row-chips {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.unit-row-actions {
+  display: grid;
+  gap: 12px;
+  justify-items: end;
 }
 
 .city-hero {
@@ -496,8 +613,15 @@ button {
   .unit-grid,
   .search-bar,
   .city-hero,
-  .step-grid {
+  .step-grid,
+  .results-layout,
+  .unit-row,
+  .search-dock {
     grid-template-columns: 1fr;
+  }
+
+  .unit-row img {
+    width: 100%;
   }
 
   .nav {

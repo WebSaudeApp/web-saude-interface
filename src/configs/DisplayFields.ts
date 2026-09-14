@@ -1,3 +1,11 @@
+import type { UnidadeTipo } from "@/types/Entities";
+
+export const unidadeTypeLabels: Record<UnidadeTipo, string> = {
+  hospital: "Hospital",
+  clinica: "Clínica",
+  pronto_atendimento: "Pronto atendimento",
+};
+
 export const unidadeCardFields = [
   "name",
   "type",

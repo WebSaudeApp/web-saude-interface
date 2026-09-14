@@ -55,6 +55,10 @@ export type Unidade = {
   photos: string[];
   rating: number;
   reviewCount: number;
+  distanceKm: number;
+  scheduleLabel: string;
+  insurances: string[];
+  open24h: boolean;
   status: UnidadeStatus;
   approval: AprovacaoStatus;
   featured?: boolean;
