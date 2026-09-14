@@ -52,6 +52,12 @@ textarea {
   color: inherit;
 }
 
+button {
+  cursor: pointer;
+  border: 0;
+  background: none;
+}
+
 .wrap {
   width: min(1296px, calc(100% - 48px));
   margin: 0 auto;
@@ -369,9 +375,128 @@ textarea {
   font-size: 0.85rem;
 }
 
+.city-hero {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 48px;
+  align-items: center;
+  padding: 56px 0 40px;
+}
+
+.city-hero h1 {
+  margin-top: 18px;
+  font-size: clamp(2rem, 4vw, 2.7rem);
+  letter-spacing: -0.03em;
+}
+
+.city-hero p {
+  color: var(--muted);
+  margin-top: 12px;
+  max-width: 48ch;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--teal);
+  box-shadow: var(--shadow);
+}
+
+.benefits {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 22px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.city-card {
+  padding: 28px;
+}
+
+.city-card h2 {
+  font-size: 1.25rem;
+}
+
+.city-card .help {
+  color: var(--muted);
+  font-size: 0.88rem;
+  margin: 4px 0 16px;
+}
+
+.city-card .help-popular {
+  margin-top: 18px;
+}
+
+.suggest {
+  display: grid;
+  gap: 6px;
+  margin: 12px 0 16px;
+}
+
+.suggest button,
+.popular button {
+  text-align: left;
+  padding: 10px 12px;
+  border-radius: 10px;
+  color: var(--text);
+}
+
+.suggest button:hover,
+.popular button:hover {
+  background: #f0fdfa;
+}
+
+.popular {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.popular button {
+  background: #f8fafc;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 0.82rem;
+}
+
+.steps {
+  padding: 20px 0 64px;
+}
+
+.steps h2 {
+  margin-bottom: 18px;
+}
+
+.step-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.step {
+  padding: 22px;
+}
+
+.step b {
+  display: block;
+  margin: 6px 0;
+}
+
 @media (max-width: 860px) {
   .unit-grid,
-  .search-bar {
+  .search-bar,
+  .city-hero,
+  .step-grid {
     grid-template-columns: 1fr;
   }
 
