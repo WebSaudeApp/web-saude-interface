@@ -64,7 +64,9 @@ export default function AccountSidebar() {
         >
           Minhas avaliações
         </Link>
-        <Link href={publicRoutes.recoverPassword}>Alterar senha</Link>
+        <Link href={`${publicRoutes.recoverPassword}?flow=change`}>
+          Alterar senha
+        </Link>
         <button type="button" onClick={handleSignOut}>
           Sair
         </button>
