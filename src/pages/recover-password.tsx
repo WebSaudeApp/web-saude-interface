@@ -8,18 +8,28 @@ import { publicRoutes } from "@/configs/Routes";
 
 const RESET_REDIRECT_MS = 900;
 
-const stepOneCopy: Record<
+type Stage = "email" | "confirmation" | "reset" | "success";
+
+const requestCopy: Record<
   "recover" | "change",
-  { title: string; subtitle: string }
+  {
+    title: string;
+    subtitle: string;
+    confirmationSubtitle: (email: string) => string;
+  }
 > = {
   recover: {
     title: "Recuperar senha",
     subtitle:
       "Informe o e-mail da sua conta para enviarmos o link de redefinição.",
+    confirmationSubtitle: (email) =>
+      `Enviamos um link de redefinição para ${email}. Abra o link recebido para continuar.`,
   },
   change: {
     title: "Alterar senha",
     subtitle: "Informe seu e-mail para confirmarmos a alteração de senha.",
+    confirmationSubtitle: (email) =>
+      `Enviamos um link de confirmação para ${email}. Abra o link recebido para continuar.`,
   },
 };
 
@@ -27,25 +37,38 @@ export default function RecuperarSenhaPage() {
   const router = useRouter();
   const flow = router.query.flow === "change" ? "change" : "recover";
 
-  const [step, setStep] = useState<1 | 2>(1);
+  const [stage, setStage] = useState<Stage>("email");
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [confirmaSenha, setConfirmaSenha] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
 
-  const title = step === 1 ? stepOneCopy[flow].title : "Nova senha";
+  const stepNumber = stage === "reset" || stage === "success" ? 2 : 1;
+
+  const title =
+    stage === "reset" || stage === "success"
+      ? "Nova senha"
+      : stage === "confirmation"
+        ? "Verifique seu e-mail"
+        : requestCopy[flow].title;
+
   const subtitle =
-    step === 1
-      ? stepOneCopy[flow].subtitle
-      : "Crie uma senha nova para a sua conta.";
+    stage === "reset" || stage === "success"
+      ? "Crie uma senha nova para a sua conta."
+      : stage === "confirmation"
+        ? requestCopy[flow].confirmationSubtitle(email)
+        : requestCopy[flow].subtitle;
 
-  function handleStepOneSubmit(event: FormEvent<HTMLFormElement>) {
+  function handleEmailSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setStep(2);
+    setStage("confirmation");
   }
 
-  function handleStepTwoSubmit(event: FormEvent<HTMLFormElement>) {
+  function handleOpenLink() {
+    setStage("reset");
+  }
+
+  function handleResetSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (senha !== confirmaSenha) {
@@ -54,7 +77,7 @@ export default function RecuperarSenhaPage() {
     }
 
     setError(null);
-    setSuccess(true);
+    setStage("success");
     setTimeout(() => {
       router.push(publicRoutes.login);
     }, RESET_REDIRECT_MS);
@@ -68,17 +91,19 @@ export default function RecuperarSenhaPage() {
       <div className="auth-page">
         <form
           className="card auth-card auth-card-solo"
-          onSubmit={step === 1 ? handleStepOneSubmit : handleStepTwoSubmit}
+          onSubmit={
+            stage === "email"
+              ? handleEmailSubmit
+              : stage === "reset"
+                ? handleResetSubmit
+                : (event) => event.preventDefault()
+          }
         >
           <BrandLink />
           <h1>{title}</h1>
           <p className="sub">{subtitle}</p>
 
-          {success ? (
-            <p className="field-success">
-              Senha redefinida com sucesso. Redirecionando para o login…
-            </p>
-          ) : step === 1 ? (
+          {stage === "email" ? (
             <>
               <label className="field">
                 <span>E-mail</span>
@@ -94,7 +119,19 @@ export default function RecuperarSenhaPage() {
                 Enviar
               </button>
             </>
-          ) : (
+          ) : null}
+
+          {stage === "confirmation" ? (
+            <button
+              className="btn btn-primary btn-lg"
+              type="button"
+              onClick={handleOpenLink}
+            >
+              Abrir link recebido
+            </button>
+          ) : null}
+
+          {stage === "reset" ? (
             <>
               <label className="field">
                 <span>Nova senha</span>
@@ -122,9 +159,15 @@ export default function RecuperarSenhaPage() {
                 Resetar senha
               </button>
             </>
-          )}
+          ) : null}
 
-          <p className="center-note">Etapa {step} de 2</p>
+          {stage === "success" ? (
+            <p className="field-success">
+              Senha redefinida com sucesso. Redirecionando para o login…
+            </p>
+          ) : null}
+
+          <p className="center-note">Etapa {stepNumber} de 2</p>
           <p className="center-note">
             <Link href={publicRoutes.login}>Voltar ao login</Link>
           </p>
