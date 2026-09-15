@@ -6,10 +6,19 @@ import type { Unidade } from "@/types/Entities";
 
 type UnidadeRowProps = {
   unidade: Unidade;
+  onFavoriteChange?: (isFavorite: boolean) => void;
 };
 
-export default function UnidadeRow({ unidade }: UnidadeRowProps) {
+export default function UnidadeRow({
+  unidade,
+  onFavoriteChange,
+}: UnidadeRowProps) {
   const [isFavorite, toggleFavorite] = useFavorite(unidade.id);
+
+  function handleToggleFavorite() {
+    toggleFavorite();
+    onFavoriteChange?.(!isFavorite);
+  }
 
   return (
     <article className="card unit-row">
@@ -43,7 +52,7 @@ export default function UnidadeRow({ unidade }: UnidadeRowProps) {
         <button
           className={`heart${isFavorite ? " is-on" : ""}`}
           type="button"
-          onClick={toggleFavorite}
+          onClick={handleToggleFavorite}
           aria-label="Favoritar"
         >
           ♥

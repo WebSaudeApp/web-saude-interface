@@ -31,3 +31,17 @@ export function useFavorite(id: string) {
 
   return [isFavorite, toggle] as const;
 }
+
+export function useFavoriteIds() {
+  const [ids, setIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    setIds(readFavorites());
+  }, []);
+
+  function remove(id: string) {
+    setIds((current) => current.filter((favoriteId) => favoriteId !== id));
+  }
+
+  return { ids, remove };
+}

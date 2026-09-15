@@ -1,10 +1,7 @@
 import { useState, type FormEvent } from "react";
 import Head from "next/head";
-import Link from "next/link";
-import { useRouter } from "next/router";
-import { patientRoutes, publicRoutes } from "@/configs/Routes";
+import AccountSidebar from "@/components/layouts/AccountSidebar";
 import { useAuth } from "@/hooks/useAuth";
-import { getInitials } from "@/lib/initials";
 import { alertService } from "@/services/AlertService";
 import type { UserRole } from "@/types/Entities";
 
@@ -21,8 +18,7 @@ const mockDefaults = {
 };
 
 export default function PerfilPage() {
-  const router = useRouter();
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
 
   const initialName = user?.name ?? mockDefaults.name;
   const initialEmail = user?.email ?? mockDefaults.email;
@@ -44,36 +40,13 @@ export default function PerfilPage() {
     setTelefone(initialPhone);
   }
 
-  function handleSignOut() {
-    signOut();
-    router.push(publicRoutes.home);
-  }
-
   return (
     <>
       <Head>
         <title>Web Saúde — Meu perfil</title>
       </Head>
       <div className="account">
-        <aside className="card side">
-          <div className="avatar avatar-initials" aria-hidden="true">
-            {getInitials(nome)}
-          </div>
-          <b>{nome}</b>
-          <div className="help">{email}</div>
-          <span className="chip">{tipoLabel}</span>
-          <nav className="side-nav">
-            <Link className="is-active" href={patientRoutes.profile}>
-              Editar perfil
-            </Link>
-            <Link href={patientRoutes.favorites}>Meus favoritos</Link>
-            <Link href={patientRoutes.reviews}>Minhas avaliações</Link>
-            <Link href={publicRoutes.recoverPassword}>Alterar senha</Link>
-            <button type="button" onClick={handleSignOut}>
-              Sair
-            </button>
-          </nav>
-        </aside>
+        <AccountSidebar />
         <form className="card panel" onSubmit={handleSubmit}>
           <h1>Meus dados</h1>
           <label className="field">
