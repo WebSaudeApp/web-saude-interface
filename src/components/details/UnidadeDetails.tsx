@@ -5,6 +5,7 @@ import { unidadeTypeLabels } from "@/configs/DisplayFields";
 import { publicRoutes } from "@/configs/Routes";
 import { useAuth } from "@/hooks/useAuth";
 import { useFavorite } from "@/hooks/useFavorite";
+import { getInitials } from "@/lib/initials";
 import { alertService } from "@/services/AlertService";
 import type { Unidade } from "@/types/Entities";
 
@@ -19,15 +20,6 @@ function formatDate(value: string) {
 
 function stars(rating: number) {
   return "★".repeat(rating) + "☆".repeat(5 - rating);
-}
-
-function initials(name: string) {
-  return name
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join("");
 }
 
 export default function UnidadeDetails({ unidade }: UnidadeDetailsProps) {
@@ -139,7 +131,7 @@ export default function UnidadeDetails({ unidade }: UnidadeDetailsProps) {
         {avaliacoesMock.map((avaliacao) => (
           <article className="review" key={avaliacao.id}>
             <div className="avatar avatar-initials" aria-hidden="true">
-              {initials(avaliacao.authorName)}
+              {getInitials(avaliacao.authorName)}
             </div>
             <div>
               <b>{avaliacao.authorName}</b>

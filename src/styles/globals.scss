@@ -823,6 +823,63 @@ button {
   margin-top: -8px;
 }
 
+.account {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 20px;
+}
+
+.side {
+  padding: 22px;
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  text-align: center;
+}
+
+.side .avatar {
+  width: 88px;
+  height: 88px;
+  margin: 0 auto 8px;
+}
+
+.side .avatar-initials {
+  font-size: 1.75rem;
+}
+
+.side-nav {
+  display: grid;
+  gap: 4px;
+  text-align: left;
+  margin-top: 12px;
+}
+
+.side-nav a,
+.side-nav button {
+  padding: 10px 12px;
+  border-radius: 10px;
+  color: var(--muted);
+  text-align: left;
+}
+
+.side-nav a.is-active,
+.side-nav button.is-active {
+  background: var(--teal);
+  color: #fff;
+}
+
+.panel {
+  padding: 28px;
+  display: grid;
+  gap: 16px;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 @media (max-width: 860px) {
   .unit-grid,
   .search-bar,
@@ -832,7 +889,8 @@ button {
   .unit-row,
   .search-dock,
   .gallery,
-  .auth-split {
+  .auth-split,
+  .account {
     grid-template-columns: 1fr;
   }
 
