@@ -5,22 +5,15 @@ import { unidadeTypeLabels } from "@/configs/DisplayFields";
 import { publicRoutes } from "@/configs/Routes";
 import { useAuth } from "@/hooks/useAuth";
 import { useFavorite } from "@/hooks/useFavorite";
+import { formatDate } from "@/lib/date";
 import { getInitials } from "@/lib/initials";
+import { formatStars } from "@/lib/stars";
 import { alertService } from "@/services/AlertService";
 import type { Unidade } from "@/types/Entities";
 
 type UnidadeDetailsProps = {
   unidade: Unidade;
 };
-
-function formatDate(value: string) {
-  const [year, month, day] = value.split("-");
-  return `${day}/${month}/${year}`;
-}
-
-function stars(rating: number) {
-  return "★".repeat(rating) + "☆".repeat(5 - rating);
-}
 
 export default function UnidadeDetails({ unidade }: UnidadeDetailsProps) {
   const router = useRouter();
@@ -135,7 +128,7 @@ export default function UnidadeDetails({ unidade }: UnidadeDetailsProps) {
             </div>
             <div>
               <b>{avaliacao.authorName}</b>
-              <div>{stars(avaliacao.rating)}</div>
+              <div>{formatStars(avaliacao.rating)}</div>
               <p>{avaliacao.comment}</p>
             </div>
             <span>{formatDate(avaliacao.createdAt)}</span>

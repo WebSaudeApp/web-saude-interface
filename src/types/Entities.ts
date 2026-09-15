@@ -40,6 +40,14 @@ export type Avaliacao = {
   createdAt: string;
 };
 
+export type MinhaAvaliacao = {
+  id: string;
+  unidadeId: string;
+  rating: number;
+  comment: string;
+  createdAt: string;
+};
+
 export type Unidade = {
   id: string;
   name: string;
