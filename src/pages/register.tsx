@@ -27,7 +27,7 @@ export default function RegistroPage() {
 
     setPasswordError(null);
     router.push(
-      `${publicRoutes.verifyEmail}?email=${encodeURIComponent(email)}`,
+      `${publicRoutes.verifyEmail}?email=${encodeURIComponent(email)}&tipo=${tipo}`,
     );
   }
 
