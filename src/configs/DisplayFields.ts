@@ -15,14 +15,6 @@ export const unidadeCardFields = [
   "photos",
 ] as const;
 
-export const unidadeDetailSections = [
-  "gallery",
-  "contact",
-  "specialties",
-  "hours",
-  "reviews",
-] as const;
-
 export const gestorUnidadeColumns = [
   "name",
   "type",

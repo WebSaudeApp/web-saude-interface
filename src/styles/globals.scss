@@ -188,6 +188,11 @@ button {
   font-weight: 600;
 }
 
+.chip-ok {
+  background: #dcfce7;
+  color: #166534;
+}
+
 .card {
   background: var(--card);
   border-radius: var(--radius);
@@ -365,6 +370,11 @@ button {
 
 .heart.is-on {
   color: var(--danger);
+}
+
+.btn-ghost.is-fav {
+  color: var(--danger);
+  border-color: var(--danger);
 }
 
 .pager {
@@ -609,6 +619,108 @@ button {
   margin: 6px 0;
 }
 
+.details {
+  display: grid;
+  gap: 16px;
+}
+
+.details-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+}
+
+.gallery {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 16px;
+}
+
+.gallery-main {
+  width: 100%;
+  height: 260px;
+  object-fit: cover;
+  border-radius: var(--radius);
+  background: #e2e8f0;
+}
+
+.thumbs {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.thumbs img {
+  width: 72px;
+  height: 56px;
+  object-fit: cover;
+  border-radius: 8px;
+  cursor: pointer;
+  opacity: 0.75;
+}
+
+.thumbs img.is-on {
+  opacity: 1;
+  outline: 2px solid var(--teal);
+}
+
+.info-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.info-card {
+  padding: 18px;
+  display: grid;
+  gap: 10px;
+}
+
+.spec-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.reviews-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.reviews-score {
+  font-size: 2rem;
+}
+
+.review {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 12px;
+  align-items: start;
+  padding-top: 12px;
+  margin-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #e2e8f0;
+}
+
+.avatar-initials {
+  display: grid;
+  place-items: center;
+  background: var(--teal);
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
 @media (max-width: 860px) {
   .unit-grid,
   .search-bar,
@@ -616,7 +728,8 @@ button {
   .step-grid,
   .results-layout,
   .unit-row,
-  .search-dock {
+  .search-dock,
+  .gallery {
     grid-template-columns: 1fr;
   }
 
