@@ -77,3 +77,13 @@ export type Session = {
   user: User;
   token: string;
 };
+
+export type AdminUsuarioStatus = "ativo" | "inativo";
+
+export type AdminUsuario = {
+  id: string;
+  name: string;
+  email: string;
+  role: Exclude<UserRole, "visitor">;
+  status: AdminUsuarioStatus;
+};

@@ -893,6 +893,7 @@ button {
 .side-nav {
   display: grid;
   gap: 4px;
+  align-content: start;
   text-align: left;
   margin-top: 12px;
 }
@@ -1082,6 +1083,77 @@ button {
   color: var(--danger);
 }
 
+.admin {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 20px;
+}
+
+.admin > .side-nav {
+  padding: 16px;
+  align-self: start;
+}
+
+.admin-section {
+  margin-top: 22px;
+}
+
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.kpi {
+  padding: 18px;
+  display: grid;
+  gap: 4px;
+}
+
+.kpi span {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.kpi b {
+  display: block;
+  font-size: 1.8rem;
+}
+
+.toolbar-title {
+  margin: 0;
+}
+
+.toolbar-search {
+  max-width: 260px;
+}
+
+.admin-table-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1.6fr;
+  gap: 8px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--line);
+  align-items: center;
+}
+
+.admin-table-row:last-child {
+  border-bottom: none;
+}
+
+.admin-user-row {
+  display: grid;
+  grid-template-columns: 1.3fr 1.5fr 1fr 1fr 1.2fr;
+  gap: 8px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--line);
+  align-items: center;
+}
+
+.admin-user-row:last-child {
+  border-bottom: none;
+}
+
 @media (max-width: 860px) {
   .unit-grid,
   .search-bar,
@@ -1096,7 +1168,11 @@ button {
   .form-grid-2,
   .form-grid-3,
   .hours-row,
-  .unit-table-row {
+  .unit-table-row,
+  .admin,
+  .kpis,
+  .admin-table-row,
+  .admin-user-row {
     grid-template-columns: 1fr;
   }
 
