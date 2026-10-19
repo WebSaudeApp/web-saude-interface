@@ -1,4 +1,4 @@
-import { ChangeEvent, useMemo, useState } from "react";
+import { ChangeEvent, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/router";
 import UseLocationButton from "@/components/search/UseLocationButton";
 import { publicRoutes } from "@/configs/Routes";
@@ -9,6 +9,7 @@ import type { GeoPoint } from "@/types/Entities";
 export default function CitySearchCard() {
   const router = useRouter();
   const [query, setQuery] = useState("");
+  const inputRef = useRef<HTMLInputElement | null>(null);
 
   const suggestions = useMemo(() => {
     const term = query.trim().toLowerCase();
@@ -46,6 +47,7 @@ export default function CitySearchCard() {
           <path d="M20 20l-3-3" />
         </svg>
         <input
+          ref={inputRef}
           className="input"
           value={query}
           onChange={handleInputChange}
@@ -66,6 +68,7 @@ export default function CitySearchCard() {
       <UseLocationButton
         className="btn btn-primary btn-lg"
         onLocate={goToLocation}
+        onError={() => inputRef.current?.focus()}
       />
       <p className="help help-popular">Cidades populares</p>
       <div className="popular">

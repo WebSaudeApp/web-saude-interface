@@ -5,13 +5,14 @@ import { useRouter } from "next/router";
 import ExploreUnitItem from "@/components/resultView/ExploreUnitItem";
 import ResultsMap, { type MapPin } from "@/components/resultView/ResultsMap";
 import {
+  defaultRadiusKm,
   emptyExploreFilters,
   ExploreFiltersPanel,
   ExploreSearchBar,
+  radiusOptions,
   type ExploreFilters,
 } from "@/components/search/ExploreFilters";
 import { unidadeTypeLabels } from "@/configs/DisplayFields";
-import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
 import { useEspecialidades, useUnidadesSearch } from "@/hooks/useUnidades";
 import { apiTipoByType } from "@/lib/estabelecimentoAdapter";
@@ -35,6 +36,7 @@ const queryKeys: Record<keyof ExploreFilters, string> = {
 function toSearchParams(
   filters: ExploreFilters,
   near: GeoPoint | null,
+  radiusKm: number,
 ): EstabelecimentoSearchParams {
   return {
     termo: filters.term.trim() || undefined,
@@ -44,6 +46,7 @@ function toSearchParams(
     estado: filters.uf || undefined,
     lat: near?.lat,
     lng: near?.lng,
+    raioKm: near ? radiusKm : undefined,
   };
 }
 
@@ -90,25 +93,25 @@ function buildChips(filters: ExploreFilters): FilterChip[] {
 type HomePageProps = {
   initialFilters: ExploreFilters;
   initialNear: GeoPoint | null;
+  initialRadiusKm: number;
 };
 
 export default function HomePage({
   initialFilters,
   initialNear,
+  initialRadiusKm,
 }: HomePageProps) {
   const router = useRouter();
   const [filters, setFilters] = useState<ExploreFilters>(initialFilters);
   // Visitor position, only set after "Usar minha localização" (RN14).
   const [near, setNear] = useState<GeoPoint | null>(initialNear);
+  const [radiusKm, setRadiusKm] = useState(initialRadiusKm);
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement | null>(null);
 
-  // The city is typed, and the API matches it exactly: wait for a pause
-  // instead of asking for every keystroke.
-  const city = useDebouncedValue(filters.city, 500);
   const params = useMemo(
-    () => toSearchParams({ ...filters, city }, near),
-    [filters, city, near],
+    () => toSearchParams(filters, near, radiusKm),
+    [filters, near, radiusKm],
   );
 
   const { items, total, hasMore, isLoading, isLoadingMore, error, loadMore } =
@@ -157,6 +160,7 @@ export default function HomePage({
     if (near) {
       query.lat = String(roundCoordinate(near.lat));
       query.lng = String(roundCoordinate(near.lng));
+      query.raio = String(radiusKm);
     }
     (Object.keys(queryKeys) as (keyof ExploreFilters)[]).forEach((key) => {
       const value = filters[key].trim();
@@ -170,7 +174,7 @@ export default function HomePage({
     });
     // router is stable for this purpose; re-running on it would loop.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters, near]);
+  }, [filters, near, radiusKm]);
 
   // Searches by distance right away, then fills city and state once the
   // coordinates are resolved; on failure the place filters stay as they are.
@@ -215,6 +219,8 @@ export default function HomePage({
           specialties={specialties}
           onChange={setFilters}
           onLocate={handleLocate}
+          radiusKm={near ? radiusKm : null}
+          onRadiusChange={setRadiusKm}
         />
         <div className="explore-main">
           <ExploreSearchBar value={filters} onChange={setFilters} />
@@ -233,7 +239,7 @@ export default function HomePage({
                   <span>Filtros:</span>
                   {near && (
                     <span className="filter-chip">
-                      Perto de você
+                      Perto de você · até {radiusKm} km
                       <button
                         type="button"
                         aria-label="Remover filtro Perto de você"
@@ -337,6 +343,10 @@ export const getServerSideProps: GetServerSideProps<HomePageProps> = async ({
 }) => {
   const type = readQuery(query[queryKeys.type]);
   const initialNear = parseGeoPoint(query.lat, query.lng);
+  const radius = Number(readQuery(query.raio));
+  const initialRadiusKm = radiusOptions.includes(radius)
+    ? radius
+    : defaultRadiusKm;
   const filters: ExploreFilters = {
     term: readQuery(query[queryKeys.term]),
     type: type in unidadeTypeLabels ? (type as UnidadeTipo) : "",
@@ -352,5 +362,7 @@ export const getServerSideProps: GetServerSideProps<HomePageProps> = async ({
       Object.assign(filters, place);
     }
   }
-  return { props: { initialFilters: filters, initialNear } };
+  return {
+    props: { initialFilters: filters, initialNear, initialRadiusKm },
+  };
 };

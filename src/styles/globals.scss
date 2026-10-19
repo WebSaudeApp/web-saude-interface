@@ -1085,10 +1085,26 @@ button {
 .explore-filters {
   display: grid;
   align-content: start;
-  gap: 16px;
-  padding: 22px;
+  gap: 12px;
+  padding: 16px;
   overflow-y: auto;
-  width: 250px;
+  width: 220px;
+}
+
+.explore-filters .field {
+  gap: 4px;
+}
+
+.explore-filters .input,
+.explore-filters .select,
+.explore-filters .btn {
+  min-height: 36px;
+  font-size: 0.85rem;
+}
+
+.explore-filters .input,
+.explore-filters .select {
+  padding: 0 10px;
 }
 
 .explore-filters-head {
@@ -1248,10 +1264,10 @@ button {
 
 .explore-item {
   display: grid;
-  grid-template-columns: 128px minmax(0, 1fr) auto;
-  gap: 18px;
+  grid-template-columns: 88px minmax(0, 1fr) auto;
+  gap: 14px;
   align-items: center;
-  padding: 18px;
+  padding: 12px 14px;
   border: 1px solid var(--line);
   box-shadow: none;
   transition:
@@ -1265,8 +1281,8 @@ button {
 }
 
 .explore-item-thumb {
-  width: 128px;
-  height: 128px;
+  width: 88px;
+  height: 88px;
   border-radius: 12px;
   background: var(--teal-soft);
   display: grid;
@@ -1292,7 +1308,7 @@ button {
 
 .explore-item-body {
   display: grid;
-  gap: 6px;
+  gap: 4px;
 }
 
 .explore-item-top {
@@ -1311,11 +1327,14 @@ button {
 
 .explore-item h3 {
   margin: 0;
-  font-size: 1.12rem;
+  font-size: 1rem;
 }
 
 .explore .explore-item-address {
-  font-size: 0.88rem;
+  font-size: 0.82rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .explore-item-chips {
@@ -1327,8 +1346,8 @@ button {
 .explore-item-info {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px 18px;
-  font-size: 0.9rem;
+  gap: 2px 14px;
+  font-size: 0.82rem;
   color: var(--muted);
 }
 
@@ -1338,7 +1357,13 @@ button {
 
 .explore-item-actions {
   display: grid;
-  gap: 10px;
+  gap: 6px;
+}
+
+.explore-item-actions .btn {
+  min-height: 34px;
+  padding: 0 14px;
+  font-size: 0.82rem;
 }
 
 .explore-loading,
@@ -1364,8 +1389,9 @@ button {
 }
 
 .explore-filters .location-button {
-  padding: 0 12px;
-  font-size: 0.85rem;
+  gap: 6px;
+  padding: 0 10px;
+  font-size: 0.8rem;
   white-space: nowrap;
 }
 
@@ -1374,7 +1400,7 @@ button {
   cursor: progress;
 }
 
-.location-error {
+p.location-error {
   margin: -6px 0 0;
   color: var(--danger);
   font-size: 0.82rem;

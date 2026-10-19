@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { unidadeTypeLabels } from "@/configs/DisplayFields";
 import UseLocationButton from "@/components/search/UseLocationButton";
 import estados from "@/configs/Estados";
@@ -11,6 +11,14 @@ export type ExploreFilters = {
   city: string;
   uf: string;
 };
+
+// The API only stores these types (RN05), so "Pronto atendimento" is not
+// offered in the search.
+const searchableTypes: UnidadeTipo[] = ["hospital", "clinica"];
+
+// Radius options for the location search; the API accepts 1 to 50 km.
+export const radiusOptions = [5, 10, 25, 50];
+export const defaultRadiusKm = 10;
 
 export const emptyExploreFilters: ExploreFilters = {
   term: "",
@@ -28,6 +36,9 @@ type FiltersProps = {
 type ExploreFiltersPanelProps = FiltersProps & {
   specialties: string[];
   onLocate: (point: GeoPoint) => void;
+  // Only set while the visitor location is in use.
+  radiusKm: number | null;
+  onRadiusChange: (radiusKm: number) => void;
 };
 
 // Collapsible vertical panel with the selection filters, applied as they
@@ -37,6 +48,8 @@ export function ExploreFiltersPanel({
   specialties,
   onChange,
   onLocate,
+  radiusKm,
+  onRadiusChange,
 }: ExploreFiltersPanelProps) {
   function update<K extends keyof ExploreFilters>(
     key: K,
@@ -46,6 +59,20 @@ export function ExploreFiltersPanel({
   }
 
   const [open, setOpen] = useState(true);
+  // The API matches the city by its full name, so the typed text only
+  // applies on Enter or when leaving the field, not on every keystroke.
+  const [cityDraft, setCityDraft] = useState(value.city);
+  const cityRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    setCityDraft(value.city);
+  }, [value.city]);
+
+  function commitCity() {
+    if (cityDraft.trim() !== value.city.trim()) {
+      update("city", cityDraft.trim());
+    }
+  }
   const selectedCount = [value.type, value.specialty, value.city, value.uf]
     .map((field) => field.trim())
     .filter(Boolean).length;
@@ -90,9 +117,9 @@ export function ExploreFiltersPanel({
           }
         >
           <option value="">Todos</option>
-          {Object.entries(unidadeTypeLabels).map(([type, label]) => (
+          {searchableTypes.map((type) => (
             <option key={type} value={type}>
-              {label}
+              {unidadeTypeLabels[type]}
             </option>
           ))}
         </select>
@@ -116,9 +143,16 @@ export function ExploreFiltersPanel({
         <span>Cidade</span>
         <input
           className="input"
-          value={value.city}
-          onChange={(event) => update("city", event.target.value)}
-          placeholder="Qualquer cidade"
+          ref={cityRef}
+          value={cityDraft}
+          onChange={(event) => setCityDraft(event.target.value)}
+          onBlur={commitCity}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              commitCity();
+            }
+          }}
+          placeholder="Nome da cidade + Enter"
         />
       </label>
       <label className="field">
@@ -136,7 +170,27 @@ export function ExploreFiltersPanel({
           ))}
         </select>
       </label>
-      <UseLocationButton className="btn btn-outline" onLocate={onLocate} />
+      <UseLocationButton
+        className="btn btn-outline"
+        onLocate={onLocate}
+        onError={() => cityRef.current?.focus()}
+      />
+      {radiusKm !== null && (
+        <label className="field">
+          <span>Distância máxima</span>
+          <select
+            className="select"
+            value={radiusKm}
+            onChange={(event) => onRadiusChange(Number(event.target.value))}
+          >
+            {radiusOptions.map((option) => (
+              <option key={option} value={option}>
+                Até {option} km
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
       <button
         type="button"
         className="btn btn-ghost"

@@ -4,12 +4,16 @@ import type { GeoPoint } from "@/types/Entities";
 type UseLocationButtonProps = {
   className: string;
   onLocate: (point: GeoPoint) => void;
+  // Called when no location arrives, so the page can lead the visitor to
+  // type the city instead.
+  onError?: () => void;
 };
 
 // The permission prompt only appears after this click, never on page load.
 export default function UseLocationButton({
   className,
   onLocate,
+  onError,
 }: UseLocationButtonProps) {
   const { status, error, request } = useGeolocation();
 
@@ -17,6 +21,8 @@ export default function UseLocationButton({
     const point = await request();
     if (point) {
       onLocate(point);
+    } else {
+      onError?.();
     }
   }
 
