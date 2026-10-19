@@ -25,3 +25,9 @@ yarn-error.log*
 Thumbs.db
 .idea
 .vscode
+
+# TypeScript
+*.tsbuildinfo
+
+# Claude Code (local only)
+.claude/

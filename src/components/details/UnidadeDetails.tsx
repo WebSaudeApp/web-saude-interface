@@ -106,7 +106,7 @@ export default function UnidadeDetails({ unidade }: UnidadeDetailsProps) {
         </div>
       </div>
 
-      <section className="card info-card">
+      <section className="card info-card" id="avaliacoes">
         <div className="reviews-summary">
           <div>
             <b>Avaliações</b>

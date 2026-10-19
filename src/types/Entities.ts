@@ -48,6 +48,11 @@ export type MinhaAvaliacao = {
   createdAt: string;
 };
 
+export type GeoPoint = {
+  lat: number;
+  lng: number;
+};
+
 export type Unidade = {
   id: string;
   name: string;
@@ -64,6 +69,7 @@ export type Unidade = {
   rating: number;
   reviewCount: number;
   distanceKm: number;
+  location?: GeoPoint;
   scheduleLabel: string;
   insurances: string[];
   open24h: boolean;

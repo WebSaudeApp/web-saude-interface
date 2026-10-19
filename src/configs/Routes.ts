@@ -1,7 +1,6 @@
 export const publicRoutes = {
   home: "/",
   city: "/city",
-  search: "/units",
   unitDetails: (id: string) => `/units/${id}`,
   login: "/login",
   register: "/register",

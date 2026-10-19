@@ -17,7 +17,7 @@ export default function CitySearchCard() {
 
   function goToCity(nome: string) {
     void router.push({
-      pathname: publicRoutes.search,
+      pathname: publicRoutes.home,
       query: { cidade: nome },
     });
   }

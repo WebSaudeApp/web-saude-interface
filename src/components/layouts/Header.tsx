@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { useRouter } from "next/router";
+import BrandLink from "@/components/common/BrandLink";
 import {
   adminRoutes,
   managerRoutes,
@@ -10,7 +11,6 @@ import { useAuth } from "@/hooks/useAuth";
 
 const navLinks = [
   { href: publicRoutes.home, label: "Início" },
-  { href: publicRoutes.search, label: "Encontrar unidades" },
   { href: publicRoutes.city, label: "Como funciona" },
 ];
 
@@ -28,18 +28,7 @@ export default function Header() {
   return (
     <header className="header">
       <div className="header-inner">
-        <Link href={publicRoutes.home} className="brand">
-          <span className="brand-mark" aria-hidden="true">
-            <svg viewBox="0 0 24 24">
-              <path d="M8 12h8M12 8v8" strokeLinecap="round" />
-              <circle cx="15.2" cy="15.2" r="1.1" fill="#fff" stroke="none" />
-              <circle cx="18.4" cy="13.2" r="1.1" fill="#fff" stroke="none" />
-              <circle cx="16.8" cy="18.2" r="1.1" fill="#fff" stroke="none" />
-              <path d="M15.2 15.2l3.2-2M15.2 15.2l1.6 3" />
-            </svg>
-          </span>
-          <span>Web Saúde</span>
-        </Link>
+        <BrandLink />
         <nav className="nav">
           {navLinks.map((link) => (
             <Link
