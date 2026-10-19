@@ -1,7 +1,10 @@
 import { ChangeEvent, useMemo, useState } from "react";
 import { useRouter } from "next/router";
+import UseLocationButton from "@/components/search/UseLocationButton";
 import { publicRoutes } from "@/configs/Routes";
 import cidades from "@/configs/Cidades";
+import { roundCoordinate } from "@/lib/geo";
+import type { GeoPoint } from "@/types/Entities";
 
 export default function CitySearchCard() {
   const router = useRouter();
@@ -19,6 +22,13 @@ export default function CitySearchCard() {
     void router.push({
       pathname: publicRoutes.home,
       query: { cidade: nome },
+    });
+  }
+
+  function goToLocation({ lat, lng }: GeoPoint) {
+    void router.push({
+      pathname: publicRoutes.home,
+      query: { lat: roundCoordinate(lat), lng: roundCoordinate(lng) },
     });
   }
 
@@ -53,13 +63,10 @@ export default function CitySearchCard() {
           </button>
         ))}
       </div>
-      <button
+      <UseLocationButton
         className="btn btn-primary btn-lg"
-        type="button"
-        onClick={() => goToCity(cidades[0].nome)}
-      >
-        Usar minha localização
-      </button>
+        onLocate={goToLocation}
+      />
       <p className="help help-popular">Cidades populares</p>
       <div className="popular">
         {cidades.map((cidade) => (

@@ -1,17 +1,21 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import Logger from "@/services/Logger";
 
-const backendUrl = process.env.WEB_SAUDE_API_URL ?? "http://localhost:3333";
+export const backendUrl =
+  process.env.WEB_SAUDE_API_URL ?? "https://web-saude-api.onrender.com";
 
 export async function proxyToBackend(
   req: NextApiRequest,
   res: NextApiResponse,
   path: string,
+  // Query keys that belong to the page route (like [id]) and must not be
+  // forwarded: the API rejects unknown query parameters.
+  omitQuery: string[] = [],
 ) {
   try {
     const query = new URLSearchParams();
     Object.entries(req.query).forEach(([key, value]) => {
-      if (typeof value === "string") {
+      if (typeof value === "string" && !omitQuery.includes(key)) {
         query.set(key, value);
       }
     });

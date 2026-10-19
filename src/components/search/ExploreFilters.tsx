@@ -1,7 +1,8 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { unidadeTypeLabels } from "@/configs/DisplayFields";
+import UseLocationButton from "@/components/search/UseLocationButton";
 import estados from "@/configs/Estados";
-import type { UnidadeTipo } from "@/types/Entities";
+import type { GeoPoint, UnidadeTipo } from "@/types/Entities";
 
 export type ExploreFilters = {
   term: string;
@@ -26,6 +27,7 @@ type FiltersProps = {
 
 type ExploreFiltersPanelProps = FiltersProps & {
   specialties: string[];
+  onLocate: (point: GeoPoint) => void;
 };
 
 // Collapsible vertical panel with the selection filters, applied as they
@@ -34,6 +36,7 @@ export function ExploreFiltersPanel({
   value,
   specialties,
   onChange,
+  onLocate,
 }: ExploreFiltersPanelProps) {
   function update<K extends keyof ExploreFilters>(
     key: K,
@@ -133,6 +136,7 @@ export function ExploreFiltersPanel({
           ))}
         </select>
       </label>
+      <UseLocationButton className="btn btn-outline" onLocate={onLocate} />
       <button
         type="button"
         className="btn btn-ghost"

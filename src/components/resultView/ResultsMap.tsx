@@ -11,6 +11,8 @@ export type MapPin = {
 type ResultsMapProps = {
   pins: MapPin[];
   total: number;
+  // The visitor position, when shared; drawn as "você está aqui".
+  origin: GeoPoint | null;
   highlightedId: string | null;
   onHover: (id: string | null) => void;
   onSelect: (id: string) => void;
@@ -21,12 +23,12 @@ const MAX_ZOOM = 3;
 // Keeps pins away from the edges and from the summary box at the bottom.
 const PADDING = { x: 14, top: 12, bottom: 26 };
 
-// Places each pin as a percentage of the map box from the bounding box of
-// all pins. The map itself is an illustration until a real map provider is
-// integrated; only the relative positions come from the data.
-function projectPins(pins: MapPin[]) {
-  const lats = pins.map((pin) => pin.location.lat);
-  const lngs = pins.map((pin) => pin.location.lng);
+// Places points as a percentage of the map box from their bounding box. The
+// map itself is an illustration until a real map provider is integrated;
+// only the relative positions come from the data.
+function makeProjection(points: GeoPoint[]) {
+  const lats = points.map((point) => point.lat);
+  const lngs = points.map((point) => point.lng);
   const [minLat, maxLat] = [Math.min(...lats), Math.max(...lats)];
   const [minLng, maxLng] = [Math.min(...lngs), Math.max(...lngs)];
   const spanLat = maxLat - minLat || 1;
@@ -34,32 +36,47 @@ function projectPins(pins: MapPin[]) {
   const width = 100 - PADDING.x * 2;
   const height = 100 - PADDING.top - PADDING.bottom;
 
-  return pins.map((pin) => ({
-    ...pin,
+  return (point: GeoPoint) => ({
     x:
       maxLng === minLng
         ? 50
-        : PADDING.x + ((pin.location.lng - minLng) / spanLng) * width,
+        : PADDING.x + ((point.lng - minLng) / spanLng) * width,
     y:
       maxLat === minLat
         ? 45
-        : PADDING.top + ((maxLat - pin.location.lat) / spanLat) * height,
-  }));
+        : PADDING.top + ((maxLat - point.lat) / spanLat) * height,
+  });
 }
 
 export default function ResultsMap({
   pins,
   total,
+  origin,
   highlightedId,
   onHover,
   onSelect,
 }: ResultsMapProps) {
   const [zoom, setZoom] = useState(MIN_ZOOM);
-  const projected = useMemo(() => projectPins(pins), [pins]);
+  const { projected, originPosition } = useMemo(() => {
+    const points = pins.map((pin) => pin.location);
+    if (origin) {
+      points.push(origin);
+    }
+    const project = makeProjection(points);
+    return {
+      projected: pins.map((pin) => ({ ...pin, ...project(pin.location) })),
+      originPosition: origin ? project(origin) : null,
+    };
+  }, [pins, origin]);
   const withoutLocation = total - pins.length;
 
   function zoomed(value: number) {
     return 50 + (value - 50) * zoom;
+  }
+
+  function isVisible(position: { x: number; y: number }) {
+    const [x, y] = [zoomed(position.x), zoomed(position.y)];
+    return x >= 0 && x <= 100 && y >= 0 && y <= 100;
   }
 
   return (
@@ -123,9 +140,7 @@ export default function ResultsMap({
       </svg>
 
       {projected.map((pin) => {
-        const x = zoomed(pin.x);
-        const y = zoomed(pin.y);
-        if (x < 0 || x > 100 || y < 0 || y > 100) {
+        if (!isVisible(pin)) {
           return null;
         }
         return (
@@ -133,7 +148,7 @@ export default function ResultsMap({
             key={pin.id}
             type="button"
             className={`map-marker map-pin${pin.id === highlightedId ? " is-highlighted" : ""}`}
-            style={{ left: `${x}%`, top: `${y}%` }}
+            style={{ left: `${zoomed(pin.x)}%`, top: `${zoomed(pin.y)}%` }}
             title={pin.name}
             aria-label={`${pin.number}. ${pin.name}`}
             onMouseEnter={() => onHover(pin.id)}
@@ -144,6 +159,18 @@ export default function ResultsMap({
           </button>
         );
       })}
+
+      {originPosition && isVisible(originPosition) && (
+        <span
+          className="map-origin"
+          style={{
+            left: `${zoomed(originPosition.x)}%`,
+            top: `${zoomed(originPosition.y)}%`,
+          }}
+          title="Você está aqui"
+          aria-label="Você está aqui"
+        />
+      )}
 
       <div className="results-map-zoom">
         <button

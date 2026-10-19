@@ -11,20 +11,17 @@ import {
   type ExploreFilters,
 } from "@/components/search/ExploreFilters";
 import { unidadeTypeLabels } from "@/configs/DisplayFields";
-import unidadesDestaque from "@/configs/UnidadesDestaque";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
-import { normalizeText } from "@/lib/text";
-import type { Unidade, UnidadeTipo } from "@/types/Entities";
+import { useEspecialidades, useUnidadesSearch } from "@/hooks/useUnidades";
+import { apiTipoByType } from "@/lib/estabelecimentoAdapter";
+import { formatDistance, parseGeoPoint, roundCoordinate } from "@/lib/geo";
+import { reverseGeocode, type Place } from "@/lib/reverseGeocode";
+import type { EstabelecimentoSearchParams } from "@/services/UnidadeService";
+import type { GeoPoint, UnidadeTipo } from "@/types/Entities";
 
-const BATCH_SIZE = 4;
-
-type Sort = "nome" | "distancia" | "avaliacao";
-
-const sortLabels: Record<Sort, string> = {
-  nome: "Em ordem de nome",
-  distancia: "Mais próximos",
-  avaliacao: "Melhor avaliação",
-};
+// Page size asked to the API on each scroll step.
+const PAGE_SIZE = 10;
 
 // URL query keys for each filter, so a filtered list can be shared.
 const queryKeys: Record<keyof ExploreFilters, string> = {
@@ -35,34 +32,18 @@ const queryKeys: Record<keyof ExploreFilters, string> = {
   uf: "uf",
 };
 
-const specialties = Array.from(
-  new Set(unidadesDestaque.flatMap((unidade) => unidade.specialties)),
-).sort((a, b) => a.localeCompare(b, "pt-BR"));
-
-function matches(unidade: Unidade, filters: ExploreFilters) {
-  const term = normalizeText(filters.term);
-  const city = normalizeText(filters.city);
-  return (
-    (!term ||
-      normalizeText(
-        `${unidade.name} ${unidade.specialties.join(" ")}`,
-      ).includes(term)) &&
-    (!filters.type || unidade.type === filters.type) &&
-    (!filters.specialty || unidade.specialties.includes(filters.specialty)) &&
-    (!city || normalizeText(unidade.address.city).includes(city)) &&
-    (!filters.uf || unidade.address.state === filters.uf)
-  );
-}
-
-function compare(sort: Sort) {
-  return (a: Unidade, b: Unidade) => {
-    if (sort === "avaliacao") {
-      return b.rating - a.rating;
-    }
-    if (sort === "distancia") {
-      return a.distanceKm - b.distanceKm;
-    }
-    return a.name.localeCompare(b.name, "pt-BR");
+function toSearchParams(
+  filters: ExploreFilters,
+  near: GeoPoint | null,
+): EstabelecimentoSearchParams {
+  return {
+    termo: filters.term.trim() || undefined,
+    tipo: filters.type ? apiTipoByType[filters.type] : undefined,
+    especialidade: filters.specialty || undefined,
+    cidade: filters.city.trim() || undefined,
+    estado: filters.uf || undefined,
+    lat: near?.lat,
+    lng: near?.lng,
   };
 }
 
@@ -108,31 +89,46 @@ function buildChips(filters: ExploreFilters): FilterChip[] {
 
 type HomePageProps = {
   initialFilters: ExploreFilters;
+  initialNear: GeoPoint | null;
 };
 
-export default function HomePage({ initialFilters }: HomePageProps) {
+export default function HomePage({
+  initialFilters,
+  initialNear,
+}: HomePageProps) {
   const router = useRouter();
   const [filters, setFilters] = useState<ExploreFilters>(initialFilters);
-  const [sort, setSort] = useState<Sort>("nome");
+  // Visitor position, only set after "Usar minha localização" (RN14).
+  const [near, setNear] = useState<GeoPoint | null>(initialNear);
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
-  const [pendingScrollId, setPendingScrollId] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement | null>(null);
 
-  const results = useMemo(
-    () =>
-      unidadesDestaque
-        .filter((unidade) => matches(unidade, filters))
-        .sort(compare(sort)),
-    [filters, sort],
+  // The city is typed, and the API matches it exactly: wait for a pause
+  // instead of asking for every keystroke.
+  const city = useDebouncedValue(filters.city, 500);
+  const params = useMemo(
+    () => toSearchParams({ ...filters, city }, near),
+    [filters, city, near],
   );
 
-  const { visible, hasMore, loading, sentinelRef, ensureVisible } =
-    useInfiniteScroll(results, BATCH_SIZE);
+  const { items, total, hasMore, isLoading, isLoadingMore, error, loadMore } =
+    useUnidadesSearch(params, PAGE_SIZE);
+  const { data: especialidades } = useEspecialidades();
+  const specialties = useMemo(
+    () => (especialidades ?? []).map((especialidade) => especialidade.nome),
+    [especialidades],
+  );
+
+  const sentinelRef = useInfiniteScroll({
+    hasMore,
+    loading: isLoading || isLoadingMore,
+    onLoadMore: loadMore,
+  });
 
   // Pins are numbered in list order, skipping units without a location.
   const pins = useMemo(() => {
     const list: MapPin[] = [];
-    for (const unidade of results) {
+    for (const unidade of items) {
       if (unidade.location) {
         list.push({
           id: unidade.id,
@@ -143,7 +139,7 @@ export default function HomePage({ initialFilters }: HomePageProps) {
       }
     }
     return list;
-  }, [results]);
+  }, [items]);
 
   const markerById = useMemo(
     () => new Map(pins.map((pin) => [pin.id, pin.number])),
@@ -154,10 +150,14 @@ export default function HomePage({ initialFilters }: HomePageProps) {
 
   useEffect(() => {
     listRef.current?.scrollTo({ top: 0 });
-  }, [results]);
+  }, [params]);
 
   useEffect(() => {
     const query: Record<string, string> = {};
+    if (near) {
+      query.lat = String(roundCoordinate(near.lat));
+      query.lng = String(roundCoordinate(near.lng));
+    }
     (Object.keys(queryKeys) as (keyof ExploreFilters)[]).forEach((key) => {
       const value = filters[key].trim();
       if (value) {
@@ -170,27 +170,38 @@ export default function HomePage({ initialFilters }: HomePageProps) {
     });
     // router is stable for this purpose; re-running on it would loop.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters]);
+  }, [filters, near]);
 
-  // A pin can point at a unit that is not loaded yet: load up to it first,
-  // then scroll once it is in the DOM.
-  useEffect(() => {
-    if (!pendingScrollId) {
-      return;
+  // Searches by distance right away, then fills city and state once the
+  // coordinates are resolved; on failure the place filters stay as they are.
+  async function handleLocate(point: GeoPoint) {
+    setNear(point);
+    const query = new URLSearchParams({
+      lat: String(point.lat),
+      lng: String(point.lng),
+    });
+    try {
+      const response = await fetch(`/api/reverse-geocode?${query}`);
+      if (response.ok) {
+        const place = (await response.json()) as Place;
+        setFilters((current) => ({ ...current, ...place }));
+      }
+    } catch {
+      // Keep the search sorted by distance without the place filters.
     }
-    const element = listRef.current?.querySelector<HTMLElement>(
-      `[data-unit-id="${pendingScrollId}"]`,
-    );
-    if (element) {
-      element.scrollIntoView({ behavior: "smooth", block: "nearest" });
-      setPendingScrollId(null);
-    }
-  }, [pendingScrollId, visible]);
+  }
 
+  function handleClearAll() {
+    setFilters(emptyExploreFilters);
+    setNear(null);
+  }
+
+  // Pins only exist for loaded units, so the card is already in the list.
   function handleSelectPin(id: string) {
-    ensureVisible(results.findIndex((unidade) => unidade.id === id));
     setHighlightedId(id);
-    setPendingScrollId(id);
+    listRef.current
+      ?.querySelector<HTMLElement>(`[data-unit-id="${id}"]`)
+      ?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }
 
   return (
@@ -203,6 +214,7 @@ export default function HomePage({ initialFilters }: HomePageProps) {
           value={filters}
           specialties={specialties}
           onChange={setFilters}
+          onLocate={handleLocate}
         />
         <div className="explore-main">
           <ExploreSearchBar value={filters} onChange={setFilters} />
@@ -210,13 +222,27 @@ export default function HomePage({ initialFilters }: HomePageProps) {
           <div className="explore-head">
             <div>
               <h1>
-                {results.length === 1
-                  ? "1 estabelecimento encontrado"
-                  : `${results.length} estabelecimentos encontrados`}
+                {isLoading
+                  ? "Buscando estabelecimentos…"
+                  : total === 1
+                    ? "1 estabelecimento encontrado"
+                    : `${total} estabelecimentos encontrados`}
               </h1>
-              {chips.length > 0 && (
+              {(chips.length > 0 || near) && (
                 <div className="explore-chips">
                   <span>Filtros:</span>
+                  {near && (
+                    <span className="filter-chip">
+                      Perto de você
+                      <button
+                        type="button"
+                        aria-label="Remover filtro Perto de você"
+                        onClick={() => setNear(null)}
+                      >
+                        ×
+                      </button>
+                    </span>
+                  )}
                   {chips.map((chip) => (
                     <span className="filter-chip" key={chip.key}>
                       {chip.label}
@@ -234,47 +260,50 @@ export default function HomePage({ initialFilters }: HomePageProps) {
                   <button
                     type="button"
                     className="link-button"
-                    onClick={() => setFilters(emptyExploreFilters)}
+                    onClick={handleClearAll}
                   >
                     Limpar filtros
                   </button>
                 </div>
               )}
             </div>
-            <select
-              className="select explore-sort"
-              value={sort}
-              onChange={(event) => setSort(event.target.value as Sort)}
-              aria-label="Ordenar resultados"
-            >
-              {(Object.keys(sortLabels) as Sort[]).map((value) => (
-                <option key={value} value={value}>
-                  {sortLabels[value]}
-                </option>
-              ))}
-            </select>
+            {/* The API decides the order: by name, or by distance when the
+                visitor location is sent. */}
+            <span className="explore-order">
+              {near ? "Mais próximos de você" : "Em ordem de nome"}
+            </span>
           </div>
 
           <div className="explore-results">
             <div className="explore-list" ref={listRef}>
-              {results.length === 0 ? (
+              {error && items.length === 0 ? (
+                <p className="center-note">
+                  Não foi possível carregar os estabelecimentos agora. Tente
+                  novamente em instantes.
+                </p>
+              ) : isLoading ? (
+                <p className="center-note">Buscando estabelecimentos…</p>
+              ) : items.length === 0 ? (
                 <p className="center-note">
                   Nenhum estabelecimento encontrado com esses filtros.
                 </p>
               ) : (
                 <>
-                  {visible.map((unidade) => (
+                  {items.map((unidade) => (
                     <ExploreUnitItem
                       key={unidade.id}
                       unidade={unidade}
                       marker={markerById.get(unidade.id) ?? null}
+                      distanceLabel={
+                        near ? formatDistance(unidade.distanceKm) : undefined
+                      }
                       highlighted={unidade.id === highlightedId}
                       onHover={setHighlightedId}
                     />
                   ))}
                   {hasMore ? (
                     <div className="explore-loading" ref={sentinelRef}>
-                      {loading && "Carregando mais estabelecimentos…"}
+                      {isLoadingMore && "Carregando mais estabelecimentos…"}
                     </div>
                   ) : (
                     <p className="explore-end">Você chegou ao fim da lista.</p>
@@ -284,7 +313,8 @@ export default function HomePage({ initialFilters }: HomePageProps) {
             </div>
             <ResultsMap
               pins={pins}
-              total={results.length}
+              total={items.length}
+              origin={near}
               highlightedId={highlightedId}
               onHover={setHighlightedId}
               onSelect={handleSelectPin}
@@ -306,15 +336,21 @@ export const getServerSideProps: GetServerSideProps<HomePageProps> = async ({
   query,
 }) => {
   const type = readQuery(query[queryKeys.type]);
-  return {
-    props: {
-      initialFilters: {
-        term: readQuery(query[queryKeys.term]),
-        type: type in unidadeTypeLabels ? (type as UnidadeTipo) : "",
-        specialty: readQuery(query[queryKeys.specialty]),
-        city: readQuery(query[queryKeys.city]),
-        uf: readQuery(query[queryKeys.uf]),
-      },
-    },
+  const initialNear = parseGeoPoint(query.lat, query.lng);
+  const filters: ExploreFilters = {
+    term: readQuery(query[queryKeys.term]),
+    type: type in unidadeTypeLabels ? (type as UnidadeTipo) : "",
+    specialty: readQuery(query[queryKeys.specialty]),
+    city: readQuery(query[queryKeys.city]),
+    uf: readQuery(query[queryKeys.uf]),
   };
+  // Coming from "Usar minha localização" on another page: only coordinates
+  // in the URL, so the place filters are filled here.
+  if (initialNear && !filters.city && !filters.uf) {
+    const place = await reverseGeocode(initialNear);
+    if (place) {
+      Object.assign(filters, place);
+    }
+  }
+  return { props: { initialFilters: filters, initialNear } };
 };

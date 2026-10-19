@@ -1,26 +1,45 @@
+import { fromApiEstabelecimento } from "@/lib/estabelecimentoAdapter";
 import { apiClient } from "@/services/ApiClient";
-import type { Unidade } from "@/types/Entities";
-import type { SearchRequest, SearchResponse } from "@/types/Search";
+import type {
+  ApiEspecialidade,
+  ApiEstabelecimento,
+  ApiPaginada,
+} from "@/types/Api";
+
+// Query accepted by GET /estabelecimentos (names as the API expects them).
+export type EstabelecimentoSearchParams = {
+  termo?: string;
+  tipo?: string;
+  especialidade?: string;
+  cidade?: string;
+  estado?: string;
+  lat?: number;
+  lng?: number;
+  raioKm?: number;
+};
 
 export const UnidadeService = {
-  search(request: SearchRequest) {
-    return apiClient<SearchResponse<Unidade>>("/api/search", {
-      query: {
-        term: request.term,
-        city: request.city,
-        page: request.page,
-        sort: request.sort,
-      },
-    });
+  async search(
+    params: EstabelecimentoSearchParams,
+    pagina: number,
+    limite: number,
+  ) {
+    const response = await apiClient<ApiPaginada<ApiEstabelecimento>>(
+      "/api/search",
+      { query: { ...params, pagina, limite } },
+    );
+    return {
+      items: response.dados.map((item) => fromApiEstabelecimento(item)),
+      paginacao: response.paginacao,
+    };
   },
 
-  getById(id: string) {
-    return apiClient<Unidade>(`/api/units/${id}`);
+  async getById(id: string) {
+    const item = await apiClient<ApiEstabelecimento>(`/api/units/${id}`);
+    return fromApiEstabelecimento(item);
   },
 
-  featured() {
-    return apiClient<SearchResponse<Unidade>>("/api/search", {
-      query: { featured: 1, page: 1 },
-    });
+  specialties() {
+    return apiClient<ApiEspecialidade[]>("/api/specialties");
   },
 };

@@ -9,6 +9,8 @@ type ExploreUnitItemProps = {
   unidade: Unidade;
   // Pin number shown on the map; null when the unit has no location.
   marker: number | null;
+  // Distance from the visitor, when they shared their location.
+  distanceLabel?: string;
   highlighted: boolean;
   onHover: (id: string | null) => void;
 };
@@ -27,6 +29,7 @@ function formatAddress(unidade: Unidade) {
 export default function ExploreUnitItem({
   unidade,
   marker,
+  distanceLabel,
   highlighted,
   onHover,
 }: ExploreUnitItemProps) {
@@ -73,6 +76,9 @@ export default function ExploreUnitItem({
           )}
         </div>
         <div className="explore-item-info">
+          {distanceLabel && (
+            <b className="explore-item-distance">a {distanceLabel}</b>
+          )}
           {unidade.open24h ? (
             <b className="explore-item-24h">Atende 24 horas</b>
           ) : (
