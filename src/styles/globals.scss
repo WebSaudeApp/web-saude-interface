@@ -1411,17 +1411,13 @@ p.location-error {
 }
 
 .map-origin {
-  position: absolute;
+  display: block;
   width: 18px;
   height: 18px;
-  transform: translate(-50%, -50%);
   border-radius: 50%;
   background: #2563eb;
   border: 3px solid #fff;
   box-shadow: 0 0 0 6px rgba(37, 99, 235, 0.25);
-  transition:
-    left 0.25s ease,
-    top 0.25s ease;
 }
 
 .map-marker {
@@ -1446,106 +1442,71 @@ p.location-error {
   background: #e8efec;
 }
 
-.results-map-bg {
+/* More specific than mapbox-gl.css, which sets .mapboxgl-map to
+   position: relative and would collapse the map to zero height. */
+.results-map > .results-map-canvas {
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
-  transition: transform 0.25s ease;
 }
 
-.map-land {
-  fill: #e8efec;
-}
-
-.map-sea {
-  fill: #cfe3e8;
-}
-
-.map-river {
-  fill: none;
-  stroke: #cfe3e8;
-  stroke-width: 14;
-}
-
-.map-block {
-  fill: #dde7e3;
-}
-
-.map-park {
-  fill: #d4e8d8;
-}
-
-.map-street {
-  fill: none;
-  stroke: #fff;
-  stroke-width: 8;
-}
-
-.map-pin {
+.results-map-message {
   position: absolute;
-  transform: translate(-50%, -50%);
+  inset: 0;
+  margin: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  text-align: center;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+/* Mapbox moves the marker wrapper with a transform, so the scale lives on
+   this child element. */
+.map-pin {
   width: 30px;
   height: 30px;
   border: 2px solid #fff;
   box-shadow: 0 2px 6px rgba(15, 23, 42, 0.25);
-  transition:
-    left 0.25s ease,
-    top 0.25s ease,
-    transform 0.15s ease;
+  transition: transform 0.15s ease;
 }
 
 .map-pin:hover,
 .map-pin.is-highlighted {
   background: var(--teal-dark);
-  transform: translate(-50%, -50%) scale(1.2);
-  z-index: 1;
+  transform: scale(1.2);
 }
 
-.results-map-zoom {
-  position: absolute;
-  top: 14px;
-  right: 14px;
+.map-popup {
   display: grid;
-  background: #fff;
-  border-radius: 10px;
-  box-shadow: var(--shadow);
-  overflow: hidden;
+  gap: 4px;
+  padding-right: 12px;
+  font-size: 0.85rem;
 }
 
-.results-map-zoom button {
-  width: 44px;
-  height: 44px;
-  font-size: 1.3rem;
-  color: var(--text);
-}
-
-.results-map-zoom button + button {
-  border-top: 1px solid var(--line);
-}
-
-.results-map-zoom button:disabled {
-  color: var(--line);
-  cursor: default;
+.map-popup a {
+  color: var(--teal);
+  font-weight: 600;
 }
 
 .results-map-summary {
   position: absolute;
-  left: 14px;
-  right: 14px;
-  bottom: 14px;
+  top: 12px;
+  left: 12px;
+  right: 60px;
   display: grid;
   gap: 2px;
-  padding: 12px 14px;
+  padding: 8px 12px;
   background: #fff;
-  border-radius: 12px;
+  border-radius: 10px;
   box-shadow: var(--shadow);
-  font-size: 0.9rem;
+  font-size: 0.82rem;
+  pointer-events: none;
 }
 
 .results-map-summary span {
   color: var(--muted);
-  font-size: 0.8rem;
+  font-size: 0.76rem;
 }
 
 @media (max-width: 860px) {

@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import useSWR from "swr";
 import useSWRInfinite from "swr/infinite";
 import {
@@ -26,12 +27,18 @@ export function useUnidadesSearch(
       { revalidateFirstPage: false, revalidateOnFocus: false },
     );
 
+  // Stable while the pages do not change, so effects keyed on the list
+  // (like the map markers) do not re-run on every render.
+  const items = useMemo(
+    () => data?.flatMap((page) => page.items) ?? [],
+    [data],
+  );
   const last = data?.[data.length - 1];
   const isLoadingMore =
     isValidating && data !== undefined && size > data.length;
 
   return {
-    items: data?.flatMap((page) => page.items) ?? [],
+    items,
     total: data?.[0]?.paginacao.total ?? 0,
     hasMore: last?.paginacao.temMais ?? false,
     isLoading,

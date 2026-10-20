@@ -2037,6 +2037,11 @@ loose-envify@^1.1.0, loose-envify@^1.4.0:
   dependencies:
     js-tokens "^3.0.0 || ^4.0.0"
 
+mapbox-gl@3.32.0:
+  version "3.32.0"
+  resolved "https://registry.yarnpkg.com/mapbox-gl/-/mapbox-gl-3.32.0.tgz#5ef14e911985098c4c7d5400ce75246502eac53a"
+  integrity sha512-+P4qrlyejQYLyz1Bfzoe+d5Ff5vAghH54RNHm1q2VeAZqkSjQ5e1XlovQoSHlf4xqpRJtJG58kn8nkLwPMQung==
+
 math-intrinsics@^1.1.0:
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/math-intrinsics/-/math-intrinsics-1.1.0.tgz#a0dd74be81e2aa5c2f27e65ce283605ee4e2b7f9"

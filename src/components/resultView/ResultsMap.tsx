@@ -1,4 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import type { Map as MapboxMap, Marker, Popup } from "mapbox-gl";
+import "mapbox-gl/dist/mapbox-gl.css";
+import { publicRoutes } from "@/configs/Routes";
 import type { GeoPoint } from "@/types/Entities";
 
 export type MapPin = {
@@ -18,36 +21,34 @@ type ResultsMapProps = {
   onSelect: (id: string) => void;
 };
 
-const MIN_ZOOM = 1;
-const MAX_ZOOM = 3;
-// Keeps pins away from the edges and from the summary box at the bottom.
-const PADDING = { x: 14, top: 12, bottom: 26 };
+type MapStatus = "loading" | "ready" | "error";
 
-// Places points as a percentage of the map box from their bounding box. The
-// map itself is an illustration until a real map provider is integrated;
-// only the relative positions come from the data.
-function makeProjection(points: GeoPoint[]) {
-  const lats = points.map((point) => point.lat);
-  const lngs = points.map((point) => point.lng);
-  const [minLat, maxLat] = [Math.min(...lats), Math.max(...lats)];
-  const [minLng, maxLng] = [Math.min(...lngs), Math.max(...lngs)];
-  const spanLat = maxLat - minLat || 1;
-  const spanLng = maxLng - minLng || 1;
-  const width = 100 - PADDING.x * 2;
-  const height = 100 - PADDING.top - PADDING.bottom;
+const TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+const STYLE_URL = "mapbox://styles/mapbox/streets-v12";
+// Brazil, until there are results to frame.
+const INITIAL_VIEW = { center: [-51.9, -14.2] as [number, number], zoom: 3 };
+// Past this, a map that never finished loading counts as unavailable (E7).
+const LOAD_TIMEOUT_MS = 15000;
 
-  return (point: GeoPoint) => ({
-    x:
-      maxLng === minLng
-        ? 50
-        : PADDING.x + ((point.lng - minLng) / spanLng) * width,
-    y:
-      maxLat === minLat
-        ? 45
-        : PADDING.top + ((maxLat - point.lat) / spanLat) * height,
-  });
+// Popup built with DOM nodes, so unit names are never parsed as HTML.
+function popupContent(pin: MapPin) {
+  const wrapper = document.createElement("div");
+  wrapper.className = "map-popup";
+  const name = document.createElement("b");
+  name.textContent = pin.name;
+  const link = document.createElement("a");
+  link.href = publicRoutes.unitDetails(pin.id);
+  link.textContent = "Ver detalhes";
+  wrapper.append(name, link);
+  return wrapper;
 }
 
+/**
+ * Mapbox GL map with one marker per unit, placed exactly at its registered
+ * coordinates (RN12). The library is loaded on the client only; if it or the
+ * map style fails to load, the box shows "Mapa indisponível no momento" and
+ * the list keeps working on its own (E7).
+ */
 export default function ResultsMap({
   pins,
   total,
@@ -56,159 +57,200 @@ export default function ResultsMap({
   onHover,
   onSelect,
 }: ResultsMapProps) {
-  const [zoom, setZoom] = useState(MIN_ZOOM);
-  const { projected, originPosition } = useMemo(() => {
-    const points = pins.map((pin) => pin.location);
-    if (origin) {
-      points.push(origin);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const mapRef = useRef<MapboxMap | null>(null);
+  const libRef = useRef<typeof import("mapbox-gl").default | null>(null);
+  const markersRef = useRef<Map<string, Marker>>(new Map());
+  const originMarkerRef = useRef<Marker | null>(null);
+  // One popup for the whole map: opening a unit closes the previous one.
+  const popupRef = useRef<Popup | null>(null);
+  const [status, setStatus] = useState<MapStatus>("loading");
+  const statusRef = useRef<MapStatus>("loading");
+  const handlersRef = useRef({ onHover, onSelect });
+  handlersRef.current = { onHover, onSelect };
+
+  function updateStatus(next: MapStatus) {
+    statusRef.current = next;
+    setStatus(next);
+  }
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!TOKEN || !container) {
+      updateStatus("error");
+      return;
     }
-    const project = makeProjection(points);
-    return {
-      projected: pins.map((pin) => ({ ...pin, ...project(pin.location) })),
-      originPosition: origin ? project(origin) : null,
+    let cancelled = false;
+    let map: MapboxMap | null = null;
+    const timer = window.setTimeout(() => {
+      if (statusRef.current !== "ready") {
+        updateStatus("error");
+      }
+    }, LOAD_TIMEOUT_MS);
+
+    import("mapbox-gl")
+      .then(({ default: mapboxgl }) => {
+        if (cancelled) {
+          return;
+        }
+        mapboxgl.accessToken = TOKEN;
+        map = new mapboxgl.Map({
+          container,
+          style: STYLE_URL,
+          ...INITIAL_VIEW,
+        });
+        map.addControl(
+          new mapboxgl.NavigationControl({ showCompass: false }),
+          "top-right",
+        );
+        map.on("load", () => {
+          window.clearTimeout(timer);
+          updateStatus("ready");
+        });
+        // An invalid token or blocked style fails before "load". Later
+        // errors (a missing tile, say) do not take the map down.
+        map.on("error", () => {
+          if (statusRef.current !== "ready") {
+            updateStatus("error");
+          }
+        });
+        libRef.current = mapboxgl;
+        mapRef.current = map;
+      })
+      .catch(() => updateStatus("error"));
+
+    const markers = markersRef.current;
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+      markers.clear();
+      originMarkerRef.current = null;
+      popupRef.current = null;
+      map?.remove();
+      mapRef.current = null;
     };
-  }, [pins, origin]);
+  }, []);
+
+  // Rebuilds the markers when the loaded units or the visitor change, and
+  // frames all of them.
+  useEffect(() => {
+    const map = mapRef.current;
+    const mapboxgl = libRef.current;
+    if (status !== "ready" || !map || !mapboxgl) {
+      return;
+    }
+
+    markersRef.current.forEach((marker) => marker.remove());
+    markersRef.current.clear();
+    originMarkerRef.current?.remove();
+    originMarkerRef.current = null;
+    popupRef.current?.remove();
+    popupRef.current = new mapboxgl.Popup({
+      offset: 20,
+      closeButton: true,
+      focusAfterOpen: false,
+    });
+    const popup = popupRef.current;
+
+    const bounds = new mapboxgl.LngLatBounds();
+
+    for (const pin of pins) {
+      const lngLat: [number, number] = [pin.location.lng, pin.location.lat];
+      // Mapbox positions the wrapper with a transform; the styled pin is a
+      // child so its own hover scale does not move it off the coordinates.
+      const element = document.createElement("div");
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "map-marker map-pin";
+      button.textContent = String(pin.number);
+      button.title = pin.name;
+      button.setAttribute("aria-label", `${pin.number}. ${pin.name}`);
+      button.addEventListener("mouseenter", () =>
+        handlersRef.current.onHover(pin.id),
+      );
+      button.addEventListener("mouseleave", () =>
+        handlersRef.current.onHover(null),
+      );
+      // Clicking a marker opens the unit: its popup on the map and its
+      // card in the list.
+      button.addEventListener("click", (event) => {
+        event.stopPropagation();
+        popup.setLngLat(lngLat).setDOMContent(popupContent(pin)).addTo(map);
+        handlersRef.current.onSelect(pin.id);
+      });
+      element.append(button);
+
+      const marker = new mapboxgl.Marker({ element })
+        .setLngLat(lngLat)
+        .addTo(map);
+      markersRef.current.set(pin.id, marker);
+      bounds.extend(lngLat);
+    }
+
+    if (origin) {
+      const element = document.createElement("div");
+      const dot = document.createElement("span");
+      dot.className = "map-origin";
+      dot.title = "Você está aqui";
+      dot.setAttribute("aria-label", "Você está aqui");
+      element.append(dot);
+      originMarkerRef.current = new mapboxgl.Marker({ element })
+        .setLngLat([origin.lng, origin.lat])
+        .addTo(map);
+      bounds.extend([origin.lng, origin.lat]);
+    }
+
+    if (!bounds.isEmpty()) {
+      map.fitBounds(bounds, { padding: 60, maxZoom: 14, duration: 600 });
+    }
+  }, [pins, origin, status]);
+
+  useEffect(() => {
+    markersRef.current.forEach((marker, id) => {
+      marker
+        .getElement()
+        .firstElementChild?.classList.toggle(
+          "is-highlighted",
+          id === highlightedId,
+        );
+    });
+  }, [highlightedId, pins, status]);
+
   const withoutLocation = total - pins.length;
-
-  function zoomed(value: number) {
-    return 50 + (value - 50) * zoom;
-  }
-
-  function isVisible(position: { x: number; y: number }) {
-    const [x, y] = [zoomed(position.x), zoomed(position.y)];
-    return x >= 0 && x <= 100 && y >= 0 && y <= 100;
-  }
 
   return (
     <div className="results-map">
-      <svg
-        className="results-map-bg"
-        viewBox="0 0 380 720"
-        preserveAspectRatio="xMidYMid slice"
-        style={{ transform: `scale(${zoom})` }}
-        aria-hidden="true"
-      >
-        <rect width="380" height="720" className="map-land" />
-        <path
-          d="M330 0h50v720h-90c20-140 40-300 40-420S340 80 330 0z"
-          className="map-sea"
-        />
-        <rect
-          x="30"
-          y="40"
-          width="120"
-          height="90"
-          rx="8"
-          className="map-block"
-        />
-        <rect
-          x="180"
-          y="60"
-          width="110"
-          height="120"
-          rx="8"
-          className="map-block"
-        />
-        <rect
-          x="10"
-          y="420"
-          width="140"
-          height="110"
-          rx="8"
-          className="map-block"
-        />
-        <rect
-          x="170"
-          y="560"
-          width="80"
-          height="80"
-          rx="8"
-          className="map-park"
-        />
-        <path
-          d="M0 320c60-10 120 30 180 20s100-40 140-30 60 10 60 10"
-          className="map-river"
-        />
-        <path
-          d="M0 90l320-25M0 195l330-20M60 260l260-12M0 520l300 25"
-          className="map-street"
-        />
-        <path
-          d="M10 0l90 720M160 0l-12 720M220 0l30 720"
-          className="map-street"
-        />
-      </svg>
+      <div className="results-map-canvas" ref={containerRef} />
 
-      {projected.map((pin) => {
-        if (!isVisible(pin)) {
-          return null;
-        }
-        return (
-          <button
-            key={pin.id}
-            type="button"
-            className={`map-marker map-pin${pin.id === highlightedId ? " is-highlighted" : ""}`}
-            style={{ left: `${zoomed(pin.x)}%`, top: `${zoomed(pin.y)}%` }}
-            title={pin.name}
-            aria-label={`${pin.number}. ${pin.name}`}
-            onMouseEnter={() => onHover(pin.id)}
-            onMouseLeave={() => onHover(null)}
-            onClick={() => onSelect(pin.id)}
-          >
-            {pin.number}
-          </button>
-        );
-      })}
-
-      {originPosition && isVisible(originPosition) && (
-        <span
-          className="map-origin"
-          style={{
-            left: `${zoomed(originPosition.x)}%`,
-            top: `${zoomed(originPosition.y)}%`,
-          }}
-          title="Você está aqui"
-          aria-label="Você está aqui"
-        />
+      {status === "loading" && (
+        <p className="results-map-message">Carregando mapa…</p>
+      )}
+      {status === "error" && (
+        <p className="results-map-message" role="status">
+          Mapa indisponível no momento
+        </p>
       )}
 
-      <div className="results-map-zoom">
-        <button
-          type="button"
-          aria-label="Aproximar"
-          disabled={zoom >= MAX_ZOOM}
-          onClick={() => setZoom((value) => Math.min(MAX_ZOOM, value + 0.5))}
-        >
-          +
-        </button>
-        <button
-          type="button"
-          aria-label="Afastar"
-          disabled={zoom <= MIN_ZOOM}
-          onClick={() => setZoom((value) => Math.max(MIN_ZOOM, value - 0.5))}
-        >
-          −
-        </button>
-      </div>
-
-      <div className="results-map-summary">
-        {total === 0 ? (
-          <b>Nenhum estabelecimento para mostrar</b>
-        ) : (
-          <>
-            <b>
-              {pins.length} de {total} estabelecimentos no mapa
-            </b>
-            {withoutLocation > 0 && (
-              <span>
-                {withoutLocation === 1
-                  ? "1 não tem localização cadastrada e aparece só na lista."
-                  : `${withoutLocation} não têm localização cadastrada e aparecem só na lista.`}
-              </span>
-            )}
-          </>
-        )}
-      </div>
+      {status === "ready" && (
+        <div className="results-map-summary">
+          {total === 0 ? (
+            <b>Nenhum estabelecimento para mostrar</b>
+          ) : (
+            <>
+              <b>
+                {pins.length} de {total} estabelecimentos no mapa
+              </b>
+              {withoutLocation > 0 && (
+                <span>
+                  {withoutLocation === 1
+                    ? "1 não tem localização cadastrada e aparece só na lista."
+                    : `${withoutLocation} não têm localização cadastrada e aparecem só na lista.`}
+                </span>
+              )}
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 }
