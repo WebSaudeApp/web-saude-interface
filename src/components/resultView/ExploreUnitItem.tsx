@@ -37,7 +37,7 @@ export default function ExploreUnitItem({
 
   return (
     <article
-      className={`card explore-item${highlighted ? " is-highlighted" : ""}`}
+      className={`explore-item${highlighted ? " is-highlighted" : ""}`}
       data-unit-id={unidade.id}
       onMouseEnter={() => onHover(unidade.id)}
       onMouseLeave={() => onHover(null)}
@@ -86,20 +86,20 @@ export default function ExploreUnitItem({
           )}
           {unidade.phone && <span>{unidade.phone}</span>}
         </div>
-      </div>
-      <div className="explore-item-actions">
-        <Link
-          className="btn btn-primary"
-          href={publicRoutes.unitDetails(unidade.id)}
-        >
-          Ver detalhes
-        </Link>
-        <Link
-          className="btn btn-outline"
-          href={`${publicRoutes.unitDetails(unidade.id)}#avaliacoes`}
-        >
-          Ver avaliações
-        </Link>
+        <div className="explore-item-actions">
+          <Link
+            className="btn btn-primary"
+            href={publicRoutes.unitDetails(unidade.id)}
+          >
+            Ver detalhes
+          </Link>
+          <Link
+            className="btn btn-outline"
+            href={`${publicRoutes.unitDetails(unidade.id)}#avaliacoes`}
+          >
+            Ver avaliações
+          </Link>
+        </div>
       </div>
     </article>
   );

@@ -7,7 +7,7 @@ import ResultsMap, { type MapPin } from "@/components/resultView/ResultsMap";
 import {
   defaultRadiusKm,
   emptyExploreFilters,
-  ExploreFiltersPanel,
+  ExploreFilterBar,
   ExploreSearchBar,
   radiusOptions,
   type ExploreFilters,
@@ -48,46 +48,6 @@ function toSearchParams(
     lng: near?.lng,
     raioKm: near ? radiusKm : undefined,
   };
-}
-
-type FilterChip = {
-  key: string;
-  label: string;
-  clear: Partial<ExploreFilters>;
-};
-
-function buildChips(filters: ExploreFilters): FilterChip[] {
-  const chips: FilterChip[] = [];
-  if (filters.term.trim()) {
-    chips.push({
-      key: "term",
-      label: `“${filters.term.trim()}”`,
-      clear: { term: "" },
-    });
-  }
-  if (filters.type) {
-    chips.push({
-      key: "type",
-      label: unidadeTypeLabels[filters.type],
-      clear: { type: "" },
-    });
-  }
-  if (filters.specialty) {
-    chips.push({
-      key: "specialty",
-      label: filters.specialty,
-      clear: { specialty: "" },
-    });
-  }
-  const city = filters.city.trim();
-  if (city || filters.uf) {
-    chips.push({
-      key: "place",
-      label: [city, filters.uf].filter(Boolean).join(" – "),
-      clear: { city: "", uf: "" },
-    });
-  }
-  return chips;
 }
 
 type HomePageProps = {
@@ -149,8 +109,6 @@ export default function HomePage({
     [pins],
   );
 
-  const chips = buildChips(filters);
-
   useEffect(() => {
     listRef.current?.scrollTo({ top: 0 });
   }, [params]);
@@ -195,6 +153,14 @@ export default function HomePage({
     }
   }
 
+  // "Limpar seleção" in the filter bar: the selects and the location go, the
+  // typed term stays.
+  function handleClearSelection() {
+    setFilters((current) => ({ ...emptyExploreFilters, term: current.term }));
+    setNear(null);
+  }
+
+  // On the empty-results screen the term may be what hides everything.
   function handleClearAll() {
     setFilters(emptyExploreFilters);
     setNear(null);
@@ -208,91 +174,86 @@ export default function HomePage({
       ?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }
 
+  const showError = Boolean(error) && items.length === 0;
+  const showEmpty = !showError && !isLoading && items.length === 0;
+  const centered = showError || showEmpty || isLoading;
+
+  let title: string;
+  if (isLoading) {
+    title = "Buscando estabelecimentos…";
+  } else if (showError) {
+    title = "Não foi possível carregar";
+  } else if (total === 0) {
+    title = "Nenhum estabelecimento encontrado";
+  } else if (total === 1) {
+    title = "1 estabelecimento encontrado";
+  } else {
+    title = `${total} estabelecimentos encontrados`;
+  }
+
   return (
     <>
       <Head>
         <title>Web Saúde</title>
       </Head>
       <div className="explore">
-        <ExploreFiltersPanel
-          value={filters}
-          specialties={specialties}
-          onChange={setFilters}
-          onLocate={handleLocate}
-          radiusKm={near ? radiusKm : null}
-          onRadiusChange={setRadiusKm}
-        />
-        <div className="explore-main">
+        <div className="explore-top">
+          <ExploreFilterBar
+            value={filters}
+            specialties={specialties}
+            onChange={setFilters}
+            onLocate={handleLocate}
+            radiusKm={near ? radiusKm : null}
+            onRadiusChange={setRadiusKm}
+            onClear={handleClearSelection}
+          />
           <ExploreSearchBar value={filters} onChange={setFilters} />
+        </div>
 
-          <div className="explore-head">
-            <div>
-              <h1>
-                {isLoading
-                  ? "Buscando estabelecimentos…"
-                  : total === 1
-                    ? "1 estabelecimento encontrado"
-                    : `${total} estabelecimentos encontrados`}
-              </h1>
-              {(chips.length > 0 || near) && (
-                <div className="explore-chips">
-                  <span>Filtros:</span>
-                  {near && (
-                    <span className="filter-chip">
-                      Perto de você · até {radiusKm} km
-                      <button
-                        type="button"
-                        aria-label="Remover filtro Perto de você"
-                        onClick={() => setNear(null)}
-                      >
-                        ×
-                      </button>
-                    </span>
-                  )}
-                  {chips.map((chip) => (
-                    <span className="filter-chip" key={chip.key}>
-                      {chip.label}
-                      <button
-                        type="button"
-                        aria-label={`Remover filtro ${chip.label}`}
-                        onClick={() =>
-                          setFilters({ ...filters, ...chip.clear })
-                        }
-                      >
-                        ×
-                      </button>
-                    </span>
-                  ))}
-                  <button
-                    type="button"
-                    className="link-button"
-                    onClick={handleClearAll}
-                  >
-                    Limpar filtros
-                  </button>
-                </div>
-              )}
-            </div>
-            {/* The API decides the order: by name, or by distance when the
-                visitor location is sent. */}
-            <span className="explore-order">
-              {near ? "Mais próximos de você" : "Em ordem de nome"}
-            </span>
-          </div>
-
-          <div className="explore-results">
-            <div className="explore-list" ref={listRef}>
-              {error && items.length === 0 ? (
+        <div className="explore-results">
+          <section className="explore-panel">
+            <header className="explore-panel-head">
+              <h1>{title}</h1>
+              {/* The API decides the order: by name, or by distance when the
+                  visitor location is sent. */}
+              <p>
+                {near
+                  ? `Mais próximos de você · até ${radiusKm} km`
+                  : "Em ordem de nome"}
+              </p>
+            </header>
+            <div
+              className={`explore-list${centered ? " is-centered" : ""}`}
+              ref={listRef}
+            >
+              {showError ? (
                 <p className="center-note">
                   Não foi possível carregar os estabelecimentos agora. Tente
                   novamente em instantes.
                 </p>
               ) : isLoading ? (
                 <p className="center-note">Buscando estabelecimentos…</p>
-              ) : items.length === 0 ? (
-                <p className="center-note">
-                  Nenhum estabelecimento encontrado com esses filtros.
-                </p>
+              ) : showEmpty ? (
+                <div className="explore-empty">
+                  <span className="explore-empty-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24">
+                      <circle cx="11" cy="11" r="7" />
+                      <path d="M20 20l-3.5-3.5M8 11h6" />
+                    </svg>
+                  </span>
+                  <h2>Tente ajustar a busca</h2>
+                  <p>
+                    Remova algum filtro ou busque por outro termo para ver mais
+                    estabelecimentos.
+                  </p>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={handleClearAll}
+                  >
+                    Limpar seleção
+                  </button>
+                </div>
               ) : (
                 <>
                   {items.map((unidade) => (
@@ -317,6 +278,10 @@ export default function HomePage({
                 </>
               )}
             </div>
+          </section>
+          {/* On phones this slot sticks under the header while the filters
+              and the list scroll beneath it. */}
+          <div className="explore-map-slot">
             <ResultsMap
               pins={pins}
               total={items.length}

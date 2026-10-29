@@ -233,21 +233,15 @@ export default function ResultsMap({
 
       {status === "ready" && (
         <div className="results-map-summary">
-          {total === 0 ? (
-            <b>Nenhum estabelecimento para mostrar</b>
-          ) : (
-            <>
-              <b>
-                {pins.length} de {total} estabelecimentos no mapa
-              </b>
-              {withoutLocation > 0 && (
-                <span>
-                  {withoutLocation === 1
-                    ? "1 não tem localização cadastrada e aparece só na lista."
-                    : `${withoutLocation} não têm localização cadastrada e aparecem só na lista.`}
-                </span>
-              )}
-            </>
+          <b>
+            {pins.length} de {total} estabelecimentos no mapa
+          </b>
+          {withoutLocation > 0 && (
+            <span>
+              {withoutLocation === 1
+                ? "1 não tem localização cadastrada e aparece só na lista."
+                : `${withoutLocation} não têm localização cadastrada e aparecem só na lista.`}
+            </span>
           )}
         </div>
       )}
