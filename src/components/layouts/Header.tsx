@@ -80,14 +80,9 @@ export default function Header() {
               {user.name}
             </Link>
           ) : (
-            <>
-              <Link className="btn btn-ghost" href={publicRoutes.login}>
-                Entrar
-              </Link>
-              <Link className="btn btn-primary" href={publicRoutes.register}>
-                Registrar
-              </Link>
-            </>
+            <Link className="btn btn-primary" href={publicRoutes.login}>
+              Entrar
+            </Link>
           )}
           <button
             type="button"
