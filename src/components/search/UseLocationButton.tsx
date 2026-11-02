@@ -7,6 +7,9 @@ type UseLocationButtonProps = {
   // Called when no location arrives, so the page can lead the visitor to
   // type the city instead.
   onError?: () => void;
+  // Extra line shown with the error, e.g. a city suggested from the
+  // connection after the browser location failed.
+  notice?: string;
   // Toolbar version: on wide screens only the pin shows (the name stays as
   // tooltip and accessible label); on phones the CSS shows the text too.
   compact?: boolean;
@@ -19,6 +22,7 @@ export default function UseLocationButton({
   className,
   onLocate,
   onError,
+  notice,
   compact = false,
 }: UseLocationButtonProps) {
   const { status, error, request } = useGeolocation();
@@ -57,23 +61,28 @@ export default function UseLocationButton({
     </button>
   );
 
-  const message = error && (
+  const errorLine = error && (
     <p className="location-error" role="alert">
       {error}
     </p>
   );
 
-  // In the toolbar the message floats under the button instead of pushing
+  // In the toolbar the messages float under the button instead of pushing
   // the row around.
   return compact ? (
     <span className="location-wrap">
       {button}
-      {message}
+      {error && (
+        <span className="location-messages">
+          {errorLine}
+          {notice && <p className="location-notice">{notice}</p>}
+        </span>
+      )}
     </span>
   ) : (
     <>
       {button}
-      {message}
+      {errorLine}
     </>
   );
 }

@@ -18,6 +18,7 @@ import { useEspecialidades, useUnidadesSearch } from "@/hooks/useUnidades";
 import { apiTipoByType } from "@/lib/estabelecimentoAdapter";
 import { formatDistance, parseGeoPoint, roundCoordinate } from "@/lib/geo";
 import { reverseGeocode, type Place } from "@/lib/reverseGeocode";
+import { fetchIpPlace } from "@/services/LocationService";
 import type { EstabelecimentoSearchParams } from "@/services/UnidadeService";
 import type { GeoPoint, UnidadeTipo } from "@/types/Entities";
 
@@ -81,6 +82,9 @@ export default function HomePage({
   // Visitor position, only set after "Usar minha localização" (RN14).
   const [near, setNear] = useState<GeoPoint | null>(initialNear);
   const [radiusKm, setRadiusKm] = useState(initialRadiusKm);
+  // City and state suggested by the connection (not the browser), so the
+  // visitor can be told where they came from.
+  const [ipSuggestion, setIpSuggestion] = useState<Place | null>(null);
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement | null>(null);
 
@@ -89,8 +93,17 @@ export default function HomePage({
     [filters, near, radiusKm],
   );
 
-  const { items, total, hasMore, isLoading, isLoadingMore, error, loadMore } =
-    useUnidadesSearch(params, PAGE_SIZE);
+  const {
+    items,
+    total,
+    hasMore,
+    isLoading,
+    isLoadingMore,
+    error,
+    loadMoreFailed,
+    loadMore,
+    retry,
+  } = useUnidadesSearch(params, PAGE_SIZE);
   const { data: especialidades } = useEspecialidades();
   const specialties = useMemo(
     () => (especialidades ?? []).map((especialidade) => especialidade.nome),
@@ -99,7 +112,8 @@ export default function HomePage({
 
   const sentinelRef = useInfiniteScroll({
     hasMore,
-    loading: isLoading || isLoadingMore,
+    // Stops asking for pages after a failure; the retry button resumes.
+    loading: isLoading || isLoadingMore || loadMoreFailed,
     onLoadMore: loadMore,
   });
 
@@ -153,6 +167,7 @@ export default function HomePage({
   // coordinates are resolved; on failure the place filters stay as they are.
   async function handleLocate(point: GeoPoint) {
     setNear(point);
+    setIpSuggestion(null);
     const query = new URLSearchParams({
       lat: String(point.lat),
       lng: String(point.lng),
@@ -173,12 +188,39 @@ export default function HomePage({
   function handleClearSelection() {
     setFilters((current) => ({ ...emptyExploreFilters, term: current.term }));
     setNear(null);
+    setIpSuggestion(null);
+  }
+
+  // The browser could not give the position. If the visitor has not chosen a
+  // place yet, suggest the approximate one from the connection. It only fills
+  // city and state: no coordinates, so nothing is filtered by distance.
+  async function handleLocateFailed() {
+    if (filters.city.trim() || filters.uf) {
+      return;
+    }
+    const place = await fetchIpPlace();
+    if (!place) {
+      return;
+    }
+    setFilters((current) =>
+      current.city.trim() || current.uf
+        ? current
+        : { ...current, city: place.city, uf: place.uf },
+    );
+    setIpSuggestion(place);
+  }
+
+  // Any change the visitor makes to the filters replaces the suggestion.
+  function handleFiltersChange(next: ExploreFilters) {
+    setFilters(next);
+    setIpSuggestion(null);
   }
 
   // On the empty-results screen the term may be what hides everything.
   function handleClearAll() {
     setFilters(emptyExploreFilters);
     setNear(null);
+    setIpSuggestion(null);
   }
 
   // Pins only exist for loaded units, so the card is already in the list.
@@ -189,7 +231,7 @@ export default function HomePage({
       ?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }
 
-  const showError = Boolean(error) && items.length === 0;
+  const showError = Boolean(error) && !loadMoreFailed;
   const showEmpty = !showError && !isLoading && items.length === 0;
   const centered = showError || showEmpty || isLoading;
 
@@ -216,8 +258,14 @@ export default function HomePage({
           <ExploreFilterBar
             value={filters}
             specialties={specialties}
-            onChange={setFilters}
+            onChange={handleFiltersChange}
             onLocate={handleLocate}
+            onLocateFailed={handleLocateFailed}
+            locationNotice={
+              ipSuggestion
+                ? `Sugerimos ${ipSuggestion.city} – ${ipSuggestion.uf} pela sua conexão. Confira e ajuste se precisar.`
+                : undefined
+            }
             radiusKm={near ? radiusKm : null}
             onRadiusChange={setRadiusKm}
             onClear={handleClearSelection}
@@ -242,10 +290,19 @@ export default function HomePage({
               ref={listRef}
             >
               {showError ? (
-                <p className="center-note">
-                  Não foi possível carregar os estabelecimentos agora. Tente
-                  novamente em instantes.
-                </p>
+                <div className="explore-empty" role="alert">
+                  <p>
+                    Não foi possível carregar os estabelecimentos agora. Tente
+                    novamente em instantes.
+                  </p>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={retry}
+                  >
+                    Tentar novamente
+                  </button>
+                </div>
               ) : isLoading ? (
                 <p className="center-note">Buscando estabelecimentos…</p>
               ) : showEmpty ? (
@@ -283,7 +340,20 @@ export default function HomePage({
                       onHover={setHighlightedId}
                     />
                   ))}
-                  {hasMore ? (
+                  {loadMoreFailed ? (
+                    <div className="explore-loadmore-error" role="alert">
+                      <span>
+                        Não foi possível carregar mais estabelecimentos.
+                      </span>
+                      <button
+                        type="button"
+                        className="btn btn-outline"
+                        onClick={retry}
+                      >
+                        Tentar novamente
+                      </button>
+                    </div>
+                  ) : hasMore ? (
                     <div className="explore-loading" ref={sentinelRef}>
                       {isLoadingMore && "Carregando mais estabelecimentos…"}
                     </div>

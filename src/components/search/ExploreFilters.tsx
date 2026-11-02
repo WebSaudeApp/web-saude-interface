@@ -44,6 +44,19 @@ const radiusSelectOptions: SelectOption[] = radiusOptions.map((km) => ({
   label: `Até ${km} km`,
 }));
 
+// A value that came from the URL may not be among the loaded options (the
+// specialties arrive later, or may not load at all). Listing it keeps the
+// field showing what is actually being filtered.
+function withCurrentValue(
+  options: SelectOption[],
+  current: string,
+): SelectOption[] {
+  if (!current || options.some((option) => option.value === current)) {
+    return options;
+  }
+  return [...options, { value: current, label: current }];
+}
+
 export const emptyExploreFilters: ExploreFilters = {
   term: "",
   type: "",
@@ -65,6 +78,10 @@ type ExploreFilterBarProps = FiltersProps & {
   onRadiusChange: (radiusKm: number) => void;
   // Clears the selects and the location, keeping the typed term.
   onClear: () => void;
+  // The browser could not give the position (denied, unsupported, timeout).
+  onLocateFailed?: () => void;
+  // Shown with the location error, e.g. the city suggested by the connection.
+  locationNotice?: string;
 };
 
 // Horizontal bar with the selection filters, applied as they change. The
@@ -77,6 +94,8 @@ export function ExploreFilterBar({
   radiusKm,
   onRadiusChange,
   onClear,
+  onLocateFailed,
+  locationNotice,
 }: ExploreFilterBarProps) {
   const cityId = useId();
   // The API matches the city by its full name, so the typed text only
@@ -101,13 +120,16 @@ export function ExploreFilterBar({
     }
   }
 
-  const specialtyOptions: SelectOption[] = [
-    { value: "", label: "Todas" },
-    ...specialties.map((specialty) => ({
-      value: specialty,
-      label: specialty,
-    })),
-  ];
+  const specialtyOptions = withCurrentValue(
+    [
+      { value: "", label: "Todas" },
+      ...specialties.map((specialty) => ({
+        value: specialty,
+        label: specialty,
+      })),
+    ],
+    value.specialty,
+  );
 
   const hasSelection =
     Boolean(value.type || value.specialty || value.uf) ||
@@ -158,7 +180,7 @@ export function ExploreFilterBar({
         <Select
           ariaLabel="Estado"
           value={value.uf}
-          options={ufOptions}
+          options={withCurrentValue(ufOptions, value.uf)}
           onChange={(next) => update("uf", next)}
         />
       </div>
@@ -168,7 +190,11 @@ export function ExploreFilterBar({
           compact
           className="bar-location-button"
           onLocate={onLocate}
-          onError={() => cityRef.current?.focus()}
+          notice={locationNotice}
+          onError={() => {
+            cityRef.current?.focus();
+            onLocateFailed?.();
+          }}
         />
       </div>
       {radiusKm !== null && (

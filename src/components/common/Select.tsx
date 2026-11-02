@@ -41,13 +41,15 @@ export default function Select({
     if (!open) {
       return;
     }
-    function handlePointerDown(event: MouseEvent) {
+    function handlePointerDown(event: PointerEvent) {
       if (!rootRef.current?.contains(event.target as Node)) {
         setOpen(false);
       }
     }
-    document.addEventListener("mousedown", handlePointerDown);
-    return () => document.removeEventListener("mousedown", handlePointerDown);
+    // pointerdown covers mouse, touch and pen, so tapping elsewhere on a
+    // phone closes the menu at once.
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => document.removeEventListener("pointerdown", handlePointerDown);
   }, [open]);
 
   // Keeps the highlighted option visible in long menus (the 27 states).
