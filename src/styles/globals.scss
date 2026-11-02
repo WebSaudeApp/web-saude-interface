@@ -82,6 +82,8 @@ button {
   height: var(--header);
   display: flex;
   align-items: center;
+  background: var(--teal);
+  color: #fff;
 }
 
 .footer {
@@ -99,39 +101,62 @@ button {
   gap: 24px;
 }
 
+/* Logo: teal on light pages, white on the teal header. */
 .brand {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-weight: 700;
-  font-size: 1.15rem;
-  color: var(--text);
+  color: var(--teal);
+}
+
+.header .brand {
+  color: #fff;
 }
 
 .brand-mark {
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  background: var(--teal);
-  display: grid;
-  place-items: center;
+  width: 36px;
+  height: 36px;
   flex-shrink: 0;
 }
 
-.brand-mark svg {
-  width: 22px;
-  height: 22px;
-  fill: none;
-  stroke: #fff;
-  stroke-width: 2.6;
+.brand-name {
+  font-family: "Nunito", "Plus Jakarta Sans", sans-serif;
+  font-size: 1.5rem;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.brand-name b {
+  font-weight: 800;
 }
 
 .nav {
   display: flex;
   align-items: center;
   gap: 22px;
-  color: var(--muted);
-  font-size: 0.92rem;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.95rem;
+}
+
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Outlined white buttons on the teal bar. */
+.nav-actions .btn-ghost {
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.45);
+  color: #fff;
+}
+
+.nav-actions .btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: #fff;
+  color: #fff;
 }
 
 /* The text links; on phones they move into the hamburger menu. */
@@ -146,7 +171,11 @@ button {
 
 .nav a:not(.btn):hover,
 .nav a.is-active {
-  color: var(--text);
+  color: #fff;
+}
+
+.nav-links a.is-active {
+  font-weight: 700;
 }
 
 .btn {
@@ -1090,17 +1119,15 @@ button {
 
 .layout-home .brand {
   gap: 12px;
-  font-size: 1.5rem;
 }
 
 .layout-home .brand-mark {
-  width: 46px;
-  height: 46px;
+  width: 42px;
+  height: 42px;
 }
 
-.layout-home .brand-mark svg {
-  width: 26px;
-  height: 26px;
+.layout-home .brand-name {
+  font-size: 1.75rem;
 }
 
 .layout-home .nav {
@@ -1131,7 +1158,9 @@ button {
   position: relative;
   z-index: 20;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(380px, 544px);
+  /* 930 / 544 at full width (the design); in narrower windows the filters
+     keep the bigger share. */
+  grid-template-columns: minmax(0, 1.71fr) minmax(340px, 1fr);
   gap: 20px;
 }
 
@@ -1178,21 +1207,26 @@ button {
   gap: 12px;
 }
 
+/* Each field shrinks with the window, but never below what its value and
+   arrow need. */
 .bar-type {
   flex: 0 1 160px;
+  min-width: 112px;
 }
 
 .bar-specialty {
   flex: 0 1 190px;
+  min-width: 132px;
 }
 
-/* Wide enough for the whole "Nome da cidade + Enter" hint. */
 .bar-city {
   flex: 0 1 210px;
+  min-width: 130px;
 }
 
 .bar-uf {
   flex: 0 1 110px;
+  min-width: 96px;
 }
 
 .bar-radius {
@@ -1243,7 +1277,10 @@ button {
   text-align: left;
 }
 
+/* Shrinks (with an ellipsis) instead of pushing the arrow out of the box. */
 .select-value {
+  flex: 1;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1427,6 +1464,55 @@ p.location-error {
   stroke: currentColor;
   stroke-width: 2.6;
   stroke-linecap: round;
+}
+
+/* "Como funciona": three steps after the results. */
+.how-home {
+  padding: 40px 8px 16px;
+}
+
+.how-home h2 {
+  margin: 0 0 22px;
+  font-size: 1.35rem;
+  letter-spacing: -0.02em;
+}
+
+.how-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 28px 32px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.how-grid li {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.how-num {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--teal);
+  color: #fff;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.how-grid h3 {
+  margin: 0 0 4px;
+  font-size: 1rem;
+}
+
+.how-grid p {
+  font-size: 0.9rem;
+  line-height: 1.45;
 }
 
 /* Phone-only: the filter card's own "Buscar" and the location button text. */
@@ -1828,7 +1914,6 @@ p.location-error {
     position: sticky;
     top: 0;
     z-index: 40;
-    background: var(--bg);
   }
 
   .layout-home .wrap {
@@ -1970,6 +2055,15 @@ p.location-error {
     overflow: visible;
   }
 
+  .how-home {
+    padding: 32px 4px 8px;
+  }
+
+  .how-grid {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
   .explore-panel-head {
     padding: 16px;
   }
@@ -2072,8 +2166,8 @@ p.location-error {
     display: none;
   }
 
-  /* Header: compact bar with the account buttons and a hamburger menu
-     for the text links. */
+  /* Header: only the logo and the hamburger; links and account buttons
+     live in its menu. */
   :root,
   .layout-home {
     --header: 64px;
@@ -2088,19 +2182,17 @@ p.location-error {
   .brand,
   .layout-home .brand {
     gap: 8px;
-    font-size: 1.125rem;
   }
 
   .brand-mark,
   .layout-home .brand-mark {
-    width: 32px;
-    height: 32px;
+    width: 30px;
+    height: 30px;
   }
 
-  .brand-mark svg,
-  .layout-home .brand-mark svg {
-    width: 20px;
-    height: 20px;
+  .brand-name,
+  .layout-home .brand-name {
+    font-size: 1.3rem;
   }
 
   .nav,
@@ -2109,7 +2201,8 @@ p.location-error {
     font-size: 0.875rem;
   }
 
-  .nav-links {
+  .nav-links,
+  .nav-actions {
     display: none;
   }
 
@@ -2126,7 +2219,7 @@ p.location-error {
     width: 34px;
     height: 34px;
     margin-left: 4px;
-    color: var(--text);
+    color: #fff;
   }
 
   .nav-toggle svg {
@@ -2140,28 +2233,52 @@ p.location-error {
 
   .nav-menu {
     position: absolute;
-    top: 100%;
+    top: calc(100% + 8px);
+    left: 16px;
     right: 16px;
     z-index: 50;
     display: grid;
-    min-width: 200px;
+    gap: 4px;
     padding: 8px;
     background: #fff;
-    border: 1px solid var(--line);
-    border-radius: 12px;
-    box-shadow: 0 12px 24px rgba(15, 23, 42, 0.12);
+    border-radius: var(--radius);
+    box-shadow: 0 12px 24px rgba(15, 23, 42, 0.16);
   }
 
-  .nav-menu a {
+  .nav-menu > a {
     padding: 10px 12px;
     border-radius: 8px;
     color: var(--text);
     font-weight: 600;
   }
 
-  .nav-menu a.is-active {
+  .nav-menu > a.is-active {
     background: var(--teal-soft);
     color: var(--teal-dark);
+  }
+
+  .nav-menu-actions {
+    display: grid;
+    gap: 8px;
+    margin-top: 6px;
+    padding-top: 10px;
+    border-top: 1px solid var(--line);
+  }
+
+  .nav-menu-actions .chip {
+    justify-self: start;
+  }
+
+  .nav-menu-actions .btn {
+    width: 100%;
+    min-height: 42px;
+    border-radius: 10px;
+  }
+
+  .nav-menu-actions .btn-ghost {
+    background: var(--teal);
+    border-color: var(--teal);
+    color: #fff;
   }
 
   .footer-inner,

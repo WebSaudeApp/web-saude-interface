@@ -1,7 +1,6 @@
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import Select, { type SelectOption } from "@/components/common/Select";
 import UseLocationButton from "@/components/search/UseLocationButton";
-import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { unidadeTypeLabels } from "@/configs/DisplayFields";
 import estados from "@/configs/Estados";
 import type { GeoPoint, UnidadeTipo } from "@/types/Entities";
@@ -35,9 +34,6 @@ const ufOptions: SelectOption[] = [
 // button sits at the end of the filters, outside the form, and submits it
 // through this id.
 const SEARCH_FORM_ID = "explore-search-form";
-
-// Same breakpoint as the mobile layout in globals.scss.
-const MOBILE_QUERY = "(max-width: 860px)";
 
 // Radius options for the location search; the API accepts 1 to 50 km.
 export const radiusOptions = [5, 10, 25, 50];
@@ -87,9 +83,6 @@ export function ExploreFilterBar({
   // applies on Enter or when leaving the field, not on every keystroke.
   const [cityDraft, setCityDraft] = useState(value.city);
   const cityRef = useRef<HTMLInputElement | null>(null);
-  // Phones submit with the keyboard "Ir" key, and the narrow field has no
-  // room for the "+ Enter" hint.
-  const isMobile = useMediaQuery(MOBILE_QUERY);
 
   useEffect(() => {
     setCityDraft(value.city);
@@ -157,7 +150,7 @@ export function ExploreFilterBar({
               commitCity();
             }
           }}
-          placeholder={isMobile ? "Nome da cidade" : "Nome da cidade + Enter"}
+          placeholder="Nome da cidade"
         />
       </div>
       <div className="bar-field bar-uf">

@@ -21,6 +21,21 @@ import { reverseGeocode, type Place } from "@/lib/reverseGeocode";
 import type { EstabelecimentoSearchParams } from "@/services/UnidadeService";
 import type { GeoPoint, UnidadeTipo } from "@/types/Entities";
 
+const howSteps = [
+  {
+    title: "Informe o que procura",
+    text: "Use o termo, o tipo, a especialidade, a cidade ou o estado. Tudo é opcional.",
+  },
+  {
+    title: "Veja a lista e o mapa",
+    text: "Os resultados vêm em ordem de nome, e quem tem localização cadastrada aparece no mapa.",
+  },
+  {
+    title: "Abra os detalhes",
+    text: "Endereço, contatos, horários, fotos e avaliações de quem já foi atendido.",
+  },
+];
+
 // Page size asked to the API on each scroll step.
 const PAGE_SIZE = 10;
 
@@ -293,6 +308,23 @@ export default function HomePage({
           </div>
         </div>
       </div>
+
+      <section className="how-home" aria-labelledby="how-title">
+        <h2 id="how-title">Como funciona</h2>
+        <ol className="how-grid">
+          {howSteps.map((step, index) => (
+            <li key={step.title}>
+              <span className="how-num" aria-hidden="true">
+                {index + 1}
+              </span>
+              <div>
+                <h3>{step.title}</h3>
+                <p>{step.text}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </section>
     </>
   );
 }

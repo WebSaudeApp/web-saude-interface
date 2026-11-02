@@ -10,10 +10,7 @@ import {
 } from "@/configs/Routes";
 import { useAuth } from "@/hooks/useAuth";
 
-const navLinks = [
-  { href: publicRoutes.home, label: "Início" },
-  { href: publicRoutes.city, label: "Como funciona" },
-];
+const navLinks = [{ href: publicRoutes.home, label: "Início" }];
 
 function isActivePath(pathname: string, href: string) {
   if (href === publicRoutes.home) {
@@ -25,8 +22,8 @@ function isActivePath(pathname: string, href: string) {
 export default function Header() {
   const router = useRouter();
   const { user, role } = useAuth();
-  // On small screens the text links move into a menu behind the
-  // hamburger button; the account buttons stay in the bar.
+  // On small screens the bar keeps only the logo and the hamburger button;
+  // the links and the account buttons move into its menu.
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
@@ -58,32 +55,35 @@ export default function Header() {
     </Link>
   ));
 
+  const account =
+    role === "admin" ? (
+      <>
+        <span className="chip">Admin</span>
+        <Link className="btn btn-ghost" href={adminRoutes.dashboard}>
+          Painel
+        </Link>
+      </>
+    ) : role === "functional" ? (
+      <Link className="btn btn-ghost" href={managerRoutes.units}>
+        {user?.name ?? "Gestor"}
+      </Link>
+    ) : user ? (
+      <Link className="btn btn-ghost" href={patientRoutes.profile}>
+        {user.name}
+      </Link>
+    ) : (
+      <Link className="btn btn-ghost" href={publicRoutes.login}>
+        Entrar
+      </Link>
+    );
+
   return (
     <header className="header">
       <div className="header-inner">
         <BrandLink />
         <nav className="nav">
           <span className="nav-links">{links}</span>
-          {role === "admin" ? (
-            <>
-              <span className="chip">Admin</span>
-              <Link className="btn btn-ghost" href={adminRoutes.dashboard}>
-                Painel
-              </Link>
-            </>
-          ) : role === "functional" ? (
-            <Link className="btn btn-ghost" href={managerRoutes.units}>
-              {user?.name ?? "Gestor"}
-            </Link>
-          ) : user ? (
-            <Link className="btn btn-ghost" href={patientRoutes.profile}>
-              {user.name}
-            </Link>
-          ) : (
-            <Link className="btn btn-primary" href={publicRoutes.login}>
-              Entrar
-            </Link>
-          )}
+          <span className="nav-actions">{account}</span>
           <button
             type="button"
             className="nav-toggle"
@@ -105,6 +105,7 @@ export default function Header() {
       {menuOpen && (
         <div className="nav-menu" id="nav-menu">
           {links}
+          <div className="nav-menu-actions">{account}</div>
         </div>
       )}
     </header>
