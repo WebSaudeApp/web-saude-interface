@@ -78,10 +78,6 @@ type ExploreFilterBarProps = FiltersProps & {
   onRadiusChange: (radiusKm: number) => void;
   // Clears the selects and the location, keeping the typed term.
   onClear: () => void;
-  // The browser could not give the position (denied, unsupported, timeout).
-  onLocateFailed?: () => void;
-  // Shown with the location error, e.g. the city suggested by the connection.
-  locationNotice?: string;
 };
 
 // Horizontal bar with the selection filters, applied as they change. The
@@ -94,8 +90,6 @@ export function ExploreFilterBar({
   radiusKm,
   onRadiusChange,
   onClear,
-  onLocateFailed,
-  locationNotice,
 }: ExploreFilterBarProps) {
   const cityId = useId();
   // The API matches the city by its full name, so the typed text only
@@ -190,11 +184,7 @@ export function ExploreFilterBar({
           compact
           className="bar-location-button"
           onLocate={onLocate}
-          notice={locationNotice}
-          onError={() => {
-            cityRef.current?.focus();
-            onLocateFailed?.();
-          }}
+          onError={() => cityRef.current?.focus()}
         />
       </div>
       {radiusKm !== null && (

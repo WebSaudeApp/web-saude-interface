@@ -82,9 +82,9 @@ export default function HomePage({
   // Visitor position, only set after "Usar minha localização" (RN14).
   const [near, setNear] = useState<GeoPoint | null>(initialNear);
   const [radiusKm, setRadiusKm] = useState(initialRadiusKm);
-  // City and state suggested by the connection (not the browser), so the
-  // visitor can be told where they came from.
-  const [ipSuggestion, setIpSuggestion] = useState<Place | null>(null);
+  // Set once the visitor picks a place or location, so a slow suggestion
+  // never overrides it.
+  const placeChosen = useRef(false);
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement | null>(null);
 
@@ -163,11 +163,32 @@ export default function HomePage({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters, near, radiusKm]);
 
+  // First visit without a place in the URL: start from the approximate city
+  // and state of the connection (FE-03). No coordinates, so the list is not
+  // sorted by distance, and nothing is asked of the visitor.
+  useEffect(() => {
+    if (initialFilters.city.trim() || initialFilters.uf || initialNear) {
+      return;
+    }
+    let cancelled = false;
+    void fetchIpPlace().then((place) => {
+      if (cancelled || !place || placeChosen.current) {
+        return;
+      }
+      setFilters((current) => ({ ...current, city: place.city, uf: place.uf }));
+    });
+    return () => {
+      cancelled = true;
+    };
+    // Only on arrival; later filter changes belong to the visitor.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Searches by distance right away, then fills city and state once the
   // coordinates are resolved; on failure the place filters stay as they are.
   async function handleLocate(point: GeoPoint) {
+    placeChosen.current = true;
     setNear(point);
-    setIpSuggestion(null);
     const query = new URLSearchParams({
       lat: String(point.lat),
       lng: String(point.lng),
@@ -186,41 +207,22 @@ export default function HomePage({
   // "Limpar seleção" in the filter bar: the selects and the location go, the
   // typed term stays.
   function handleClearSelection() {
+    placeChosen.current = true;
     setFilters((current) => ({ ...emptyExploreFilters, term: current.term }));
     setNear(null);
-    setIpSuggestion(null);
   }
 
-  // The browser could not give the position. If the visitor has not chosen a
-  // place yet, suggest the approximate one from the connection. It only fills
-  // city and state: no coordinates, so nothing is filtered by distance.
-  async function handleLocateFailed() {
-    if (filters.city.trim() || filters.uf) {
-      return;
-    }
-    const place = await fetchIpPlace();
-    if (!place) {
-      return;
-    }
-    setFilters((current) =>
-      current.city.trim() || current.uf
-        ? current
-        : { ...current, city: place.city, uf: place.uf },
-    );
-    setIpSuggestion(place);
-  }
-
-  // Any change the visitor makes to the filters replaces the suggestion.
+  // Any change the visitor makes to the filters is theirs to keep.
   function handleFiltersChange(next: ExploreFilters) {
+    placeChosen.current = true;
     setFilters(next);
-    setIpSuggestion(null);
   }
 
   // On the empty-results screen the term may be what hides everything.
   function handleClearAll() {
+    placeChosen.current = true;
     setFilters(emptyExploreFilters);
     setNear(null);
-    setIpSuggestion(null);
   }
 
   // Pins only exist for loaded units, so the card is already in the list.
@@ -260,12 +262,6 @@ export default function HomePage({
             specialties={specialties}
             onChange={handleFiltersChange}
             onLocate={handleLocate}
-            onLocateFailed={handleLocateFailed}
-            locationNotice={
-              ipSuggestion
-                ? `Sugerimos ${ipSuggestion.city} – ${ipSuggestion.uf} pela sua conexão. Confira e ajuste se precisar.`
-                : undefined
-            }
             radiusKm={near ? radiusKm : null}
             onRadiusChange={setRadiusKm}
             onClear={handleClearSelection}

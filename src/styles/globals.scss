@@ -1393,33 +1393,21 @@ p.location-error {
   background: var(--teal-soft);
 }
 
-.location-messages {
+.location-wrap .location-error {
   position: absolute;
   z-index: 30;
   top: calc(100% + 8px);
   left: 0;
   width: 260px;
-  display: grid;
-  gap: 6px;
+  margin: 0;
   padding: 10px 12px;
   background: #fff;
   border: 1px solid var(--danger);
   border-radius: 10px;
   box-shadow: var(--shadow);
-}
-
-.location-messages p {
-  margin: 0;
   font-size: 0.8125rem;
-  line-height: 1.35;
-}
-
-.location-messages .location-error {
   font-weight: 600;
-}
-
-.location-messages .location-notice {
-  color: var(--text);
+  line-height: 1.35;
 }
 
 /* Text search card. */
@@ -2051,7 +2039,7 @@ p.location-error {
     display: inline;
   }
 
-  .location-messages {
+  .location-wrap .location-error {
     width: 100%;
   }
 
