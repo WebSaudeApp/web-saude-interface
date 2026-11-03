@@ -1,5 +1,15 @@
 import Logger from "@/services/Logger";
 
+export class ApiError extends Error {
+  status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+  }
+}
+
 type RequestOptions = {
   method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   body?: unknown;
@@ -35,7 +45,7 @@ export async function apiClient<T>(path: string, options: RequestOptions = {}) {
   if (!response.ok) {
     const message = `Falha em ${path}: ${response.status}`;
     Logger.error(message);
-    throw new Error(message);
+    throw new ApiError(message, response.status);
   }
 
   if (response.status === 204) {
