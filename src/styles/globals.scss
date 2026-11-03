@@ -577,9 +577,13 @@ button {
 
 /* Details */
 .details {
-  padding: 24px 0 48px;
+  padding: 0 0 48px;
   display: grid;
   gap: 16px;
+}
+/* The back link sits closer to the header than other pages' content. */
+.page-shell:has(> .details) {
+  padding-top: 16px;
 }
 .details-title {
   display: flex;
@@ -602,34 +606,54 @@ button {
 .det-back:hover {
   text-decoration: underline;
 }
-.fav-btn .on,
-.fav-btn.is-on .off {
-  display: none;
+/* Round buttons with only an icon; the name is the aria-label and tooltip. */
+.icon-btn {
+  width: 44px;
+  height: 44px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--text);
+  cursor: pointer;
+  transition: 0.2s ease;
 }
-.fav-btn.is-on .on {
-  display: inline;
+.icon-btn:hover {
+  border-color: var(--teal);
+  color: var(--teal);
 }
-.fav-btn.is-on {
-  color: var(--danger);
-  border-color: var(--danger);
-}
-.quick-actions {
-  display: none;
-}
-.quick-actions svg {
-  width: 18px;
-  height: 18px;
+.icon-btn svg {
+  width: 20px;
+  height: 20px;
   stroke: currentColor;
   fill: none;
   stroke-width: 2;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
-.det-top {
-  display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
-  gap: 16px;
-  align-items: start;
+.fav-btn.is-on {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+.fav-btn.is-on svg {
+  fill: currentColor;
+}
+.det-rating-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.det-rating-link:hover {
+  color: var(--teal);
+  text-decoration: underline;
+}
+#avaliacoes {
+  /* The map stays fixed on top while scrolling: leave room for it. */
+  scroll-margin-top: calc(var(--det-map-h, 0px) + 28px);
 }
 .det-gallery {
   padding: 12px;
@@ -669,16 +693,13 @@ button {
   border-radius: 8px;
   display: block;
 }
-.info-grid {
-  display: grid;
-  gap: 12px;
-}
 .info-card {
   padding: 18px;
   display: grid;
   gap: 10px;
 }
 .info-card h2 {
+  margin: 0;
   font-size: 1rem;
 }
 .info-line {
@@ -702,20 +723,150 @@ button {
 a.info-line:hover {
   color: var(--teal);
 }
+.info-phone {
+  align-items: center;
+}
+.info-phone svg {
+  margin-top: 0;
+}
+.call-btn {
+  margin-left: auto;
+  min-height: 36px;
+  padding: 0 16px;
+}
+.week-hours {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 2px;
+}
+.week-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  white-space: nowrap;
+}
+.week-row.is-today {
+  background: var(--teal-soft);
+  font-weight: 700;
+}
+.week-closed {
+  color: var(--muted);
+}
+.share {
+  position: relative;
+}
+.share-menu {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 200px;
+  display: grid;
+  padding: 6px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+}
+.share-menu a,
+.share-menu button {
+  padding: 10px 12px;
+  border-radius: 8px;
+  text-align: left;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+  background: none;
+  cursor: pointer;
+}
+.share-menu a:hover,
+.share-menu button:hover {
+  background: var(--teal-soft);
+  color: var(--teal-dark);
+}
 .spec-grid {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
 }
+/* Stays on screen while the rest of the page scrolls under it. The wrapper
+   is opaque and runs up to the top of the screen, so no card shows through
+   the gap above the map or behind its rounded corners. */
+.det-map-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  padding-top: 12px;
+  background: var(--bg);
+}
+/* One column on phones, the map on top; two columns on wide screens (below).
+   --det-map-h is also what the reviews anchor leaves room for. */
+.det-layout {
+  --det-map-h: 360px;
+  display: grid;
+  gap: 16px;
+}
+.det-content {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
 .det-map {
-  min-height: 320px;
+  height: var(--det-map-h);
+  padding: 0;
+  overflow: hidden;
   display: grid;
   place-items: center;
-  background: #eef2f1;
-  border: 2px dashed var(--line);
-  box-shadow: none;
+  background: #e8efec;
+}
+.det-map-box {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+/* More specific than mapbox-gl.css, which sets .mapboxgl-map to
+   position: relative and would collapse the map to zero height. */
+.det-map-box > .det-map-canvas {
+  position: absolute;
+  inset: 0;
+}
+.det-map-empty {
+  margin: 0;
+  padding: 24px;
+  text-align: center;
   color: var(--muted);
   font-weight: 600;
+}
+/* Wide screens: cards on the left, the map fixed on the right while the
+   cards scroll. */
+@media (min-width: 900px) {
+  .det-layout {
+    --det-map-h: min(560px, calc(100dvh - 32px));
+    grid-template-columns: minmax(0, 1fr) minmax(340px, 42%);
+    gap: 24px;
+    align-items: start;
+  }
+  .det-map-sticky {
+    grid-column: 2;
+    grid-row: 1;
+    top: 16px;
+    padding-top: 0;
+    background: none;
+  }
+  .det-content {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  #avaliacoes {
+    scroll-margin-top: 16px;
+  }
+  .gallery-main {
+    max-height: 400px;
+  }
 }
 .rev-head {
   display: flex;
@@ -737,26 +888,18 @@ a.info-line:hover {
   color: #f59e0b;
   letter-spacing: 1px;
 }
-.review {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 12px;
-  align-items: start;
-  padding-top: 14px;
-  border-top: 1px solid var(--line);
-}
-.review-top {
-  display: flex;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 2px 12px;
-}
-.review-top span {
+.empty-note {
+  margin: 0;
   color: var(--muted);
-  font-size: 0.82rem;
 }
-.review p {
-  color: var(--text);
+.details-loading {
+  padding: 48px 0;
+}
+.notfound-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
 }
 .notfound {
   padding: 40px 24px;
@@ -2021,7 +2164,6 @@ p.location-error {
   .step-grid,
   .unit-row,
   .gallery,
-  .det-top,
   .auth-split,
   .account,
   .form-grid-2,
@@ -2424,31 +2566,11 @@ p.location-error {
 }
 
 @media (max-width: 640px) {
-  .details-actions {
-    margin-left: 0;
-    width: 100%;
-  }
-  .details-actions .btn {
-    flex: 1;
-    min-height: 44px;
-  }
-  .quick-actions {
-    display: grid;
-    margin-bottom: 8px;
-  }
-  .quick-actions .btn {
-    min-height: 48px;
-  }
   .det-gallery {
-    padding: 0;
-    overflow: hidden;
-    gap: 8px;
-  }
-  .gallery-main {
-    border-radius: 0;
+    padding: 16px;
   }
   .thumbs {
-    padding: 0 12px 12px;
+    padding-bottom: 0;
   }
   .thumbs img {
     width: 84px;
@@ -2469,8 +2591,8 @@ p.location-error {
     align-items: center;
     min-height: 40px;
   }
-  .det-map {
-    min-height: 200px;
+  .det-layout {
+    --det-map-h: 260px;
   }
   .rev-head .btn {
     width: 100%;

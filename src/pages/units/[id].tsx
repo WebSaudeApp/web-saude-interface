@@ -3,38 +3,34 @@ import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import UnidadeDetails from "@/components/details/UnidadeDetails";
-import unidadesDestaque from "@/configs/UnidadesDestaque";
 import { useUnidade } from "@/hooks/useUnidades";
 import { ApiError } from "@/services/ApiClient";
 
 export default function UnidadeDetalhePage() {
   const router = useRouter();
   const id = String(router.query.id ?? "");
-  const { data: apiUnidade, error, isLoading } = useUnidade(id || undefined);
-
-  // If the API returns 404, check if it exists in mock data as a fallback.
-  const fallbackUnidade =
-    error && (error as ApiError).status === 404
-      ? unidadesDestaque.find((item) => item.id === id)
-      : undefined;
-
-  const unidade = apiUnidade ?? fallbackUnidade;
+  const {
+    data: unidade,
+    error,
+    isLoading,
+    mutate,
+  } = useUnidade(id || undefined);
 
   if (isLoading || (!unidade && !error && id)) {
     return (
       <div className="details" id="detalhe">
-        <p
-          className="center-note"
-          style={{ textAlign: "center", padding: "48px 0" }}
-        >
+        <p className="center-note details-loading">
           Carregando informações da unidade...
         </p>
       </div>
     );
   }
 
-  if (error && !unidade) {
-    const isNotFound = (error as ApiError).status === 404;
+  if (!unidade) {
+    // Only what the API has is shown: an unknown id is "not found", never a
+    // stand-in unit.
+    const isNotFound =
+      !error || (error instanceof ApiError && error.status === 404);
 
     return (
       <>
@@ -62,17 +58,11 @@ export default function UnidadeDetalhePage() {
                 Voltar para a busca
               </Link>
             ) : (
-              <div
-                style={{
-                  display: "flex",
-                  gap: "12px",
-                  justifyContent: "center",
-                }}
-              >
+              <div className="notfound-actions">
                 <button
                   type="button"
                   className="btn btn-primary"
-                  onClick={() => window.location.reload()}
+                  onClick={() => void mutate()}
                 >
                   Tentar novamente
                 </button>
@@ -81,28 +71,6 @@ export default function UnidadeDetalhePage() {
                 </Link>
               </div>
             )}
-          </section>
-        </div>
-      </>
-    );
-  }
-
-  if (!unidade) {
-    return (
-      <>
-        <Head>
-          <title>Web Saúde — Unidade não encontrada</title>
-        </Head>
-        <div className="details" id="detalhe">
-          <section className="card notfound">
-            <h1>Unidade não encontrada</h1>
-            <p className="center-note">
-              Não encontramos a unidade que você procurou. Ela pode ter sido
-              removida ou o link está incorreto.
-            </p>
-            <Link className="btn btn-primary" href="/">
-              Voltar para a busca
-            </Link>
           </section>
         </div>
       </>

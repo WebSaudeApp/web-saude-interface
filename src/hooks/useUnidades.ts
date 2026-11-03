@@ -59,7 +59,16 @@ export function useUnidadesSearch(
 }
 
 export function useUnidade(id?: string) {
-  return useSWR(id ? ["unidade", id] : null, () => UnidadeService.getById(id!));
+  return useSWR(
+    id ? ["unidade", id] : null,
+    () => UnidadeService.getById(id!),
+    {
+      // A failure waits for the visitor's "Tentar novamente" instead of
+      // retrying on its own against an API that is struggling.
+      shouldRetryOnError: false,
+      revalidateOnFocus: false,
+    },
+  );
 }
 
 export function useEspecialidades() {

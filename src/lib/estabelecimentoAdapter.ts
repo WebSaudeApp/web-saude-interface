@@ -64,6 +64,15 @@ function schedule(hours: Horario[], open24h: boolean, now: Date) {
   };
 }
 
+// A unit registered without coordinates has no point on the map.
+function coordinates(item: ApiEstabelecimento) {
+  const lat = item.endereco?.latitude;
+  const lng = item.endereco?.longitude;
+  return typeof lat === "number" && typeof lng === "number"
+    ? { lat, lng }
+    : undefined;
+}
+
 export function fromApiEstabelecimento(
   item: ApiEstabelecimento,
   now = new Date(),
@@ -108,7 +117,7 @@ export function fromApiEstabelecimento(
     rating: item.notaMedia ?? 0,
     reviewCount: item.totalReviews ?? 0,
     distanceKm: item.distanciaKm ?? 0,
-    location: { lat: item.endereco.latitude, lng: item.endereco.longitude },
+    location: coordinates(item),
     scheduleLabel: label,
     insurances: [],
     open24h,
