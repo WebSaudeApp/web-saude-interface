@@ -44,6 +44,19 @@ const radiusSelectOptions: SelectOption[] = radiusOptions.map((km) => ({
   label: `Até ${km} km`,
 }));
 
+// A value that came from the URL may not be among the loaded options (the
+// specialties arrive later, or may not load at all). Listing it keeps the
+// field showing what is actually being filtered.
+function withCurrentValue(
+  options: SelectOption[],
+  current: string,
+): SelectOption[] {
+  if (!current || options.some((option) => option.value === current)) {
+    return options;
+  }
+  return [...options, { value: current, label: current }];
+}
+
 export const emptyExploreFilters: ExploreFilters = {
   term: "",
   type: "",
@@ -101,13 +114,16 @@ export function ExploreFilterBar({
     }
   }
 
-  const specialtyOptions: SelectOption[] = [
-    { value: "", label: "Todas" },
-    ...specialties.map((specialty) => ({
-      value: specialty,
-      label: specialty,
-    })),
-  ];
+  const specialtyOptions = withCurrentValue(
+    [
+      { value: "", label: "Todas" },
+      ...specialties.map((specialty) => ({
+        value: specialty,
+        label: specialty,
+      })),
+    ],
+    value.specialty,
+  );
 
   const hasSelection =
     Boolean(value.type || value.specialty || value.uf) ||
@@ -158,7 +174,7 @@ export function ExploreFilterBar({
         <Select
           ariaLabel="Estado"
           value={value.uf}
-          options={ufOptions}
+          options={withCurrentValue(ufOptions, value.uf)}
           onChange={(next) => update("uf", next)}
         />
       </div>

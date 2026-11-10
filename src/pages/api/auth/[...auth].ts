@@ -8,6 +8,10 @@ const authMap: Record<string, string> = {
   "recover-password": "/auth/recover-password",
 };
 
+// Next only reads a literal here. Must stay above the proxy timeout
+// (`BACKEND_TIMEOUT_MS` in lib/backendProxy.ts).
+export const config = { maxDuration: 60 };
+
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
   const slug = Array.isArray(req.query.auth) ? req.query.auth.join("/") : "";
   const path = authMap[slug];

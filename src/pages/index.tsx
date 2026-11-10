@@ -17,6 +17,7 @@ import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
 import { useEspecialidades, useUnidadesSearch } from "@/hooks/useUnidades";
 import { apiTipoByType } from "@/lib/estabelecimentoAdapter";
 import { formatDistance, parseGeoPoint, roundCoordinate } from "@/lib/geo";
+import { ipPlaceFromHeaders } from "@/lib/ipLocation";
 import { reverseGeocode, type Place } from "@/lib/reverseGeocode";
 import type { EstabelecimentoSearchParams } from "@/services/UnidadeService";
 import type { GeoPoint, UnidadeTipo } from "@/types/Entities";
@@ -89,8 +90,18 @@ export default function HomePage({
     [filters, near, radiusKm],
   );
 
-  const { items, total, hasMore, isLoading, isLoadingMore, error, loadMore } =
-    useUnidadesSearch(params, PAGE_SIZE);
+  const {
+    items,
+    total,
+    hasMore,
+    isLoading,
+    isLoadingMore,
+    error,
+    loadMoreFailed,
+    isRetrying,
+    loadMore,
+    retry,
+  } = useUnidadesSearch(params, PAGE_SIZE);
   const { data: especialidades } = useEspecialidades();
   const specialties = useMemo(
     () => (especialidades ?? []).map((especialidade) => especialidade.nome),
@@ -189,15 +200,15 @@ export default function HomePage({
       ?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }
 
-  const showError = Boolean(error) && items.length === 0;
+  const showError = Boolean(error) && !loadMoreFailed;
   const showEmpty = !showError && !isLoading && items.length === 0;
   const centered = showError || showEmpty || isLoading;
 
   let title: string;
-  if (isLoading) {
-    title = "Buscando estabelecimentos…";
-  } else if (showError) {
+  if (showError) {
     title = "Não foi possível carregar";
+  } else if (isLoading) {
+    title = "Buscando estabelecimentos…";
   } else if (total === 0) {
     title = "Nenhum estabelecimento encontrado";
   } else if (total === 1) {
@@ -242,10 +253,20 @@ export default function HomePage({
               ref={listRef}
             >
               {showError ? (
-                <p className="center-note">
-                  Não foi possível carregar os estabelecimentos agora. Tente
-                  novamente em instantes.
-                </p>
+                <div className="explore-empty" role="alert">
+                  <p>
+                    Não foi possível carregar os estabelecimentos agora. Tente
+                    novamente em instantes.
+                  </p>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={retry}
+                    disabled={isRetrying}
+                  >
+                    {isRetrying ? "Tentando…" : "Tentar novamente"}
+                  </button>
+                </div>
               ) : isLoading ? (
                 <p className="center-note">Buscando estabelecimentos…</p>
               ) : showEmpty ? (
@@ -283,7 +304,21 @@ export default function HomePage({
                       onHover={setHighlightedId}
                     />
                   ))}
-                  {hasMore ? (
+                  {loadMoreFailed ? (
+                    <div className="explore-loadmore-error" role="alert">
+                      <span>
+                        Não foi possível carregar mais estabelecimentos.
+                      </span>
+                      <button
+                        type="button"
+                        className="btn btn-outline"
+                        onClick={retry}
+                        disabled={isRetrying}
+                      >
+                        {isRetrying ? "Tentando…" : "Tentar novamente"}
+                      </button>
+                    </div>
+                  ) : hasMore ? (
                     <div className="explore-loading" ref={sentinelRef}>
                       {isLoadingMore && "Carregando mais estabelecimentos…"}
                     </div>
@@ -337,6 +372,7 @@ function readQuery(value: string | string[] | undefined) {
 // already filtered, without a flash of the unfiltered list.
 export const getServerSideProps: GetServerSideProps<HomePageProps> = async ({
   query,
+  req,
 }) => {
   const type = readQuery(query[queryKeys.type]);
   const initialNear = parseGeoPoint(query.lat, query.lng);
@@ -355,6 +391,17 @@ export const getServerSideProps: GetServerSideProps<HomePageProps> = async ({
   // in the URL, so the place filters are filled here.
   if (initialNear && !filters.city && !filters.uf) {
     const place = await reverseGeocode(initialNear);
+    if (place) {
+      Object.assign(filters, place);
+    }
+  }
+  // A link with no filter at all starts from the approximate city and state
+  // of the connection (FE-03): no coordinates, so nothing is sorted by
+  // distance and nothing is asked of the visitor. Any filter in the link means
+  // the visitor chose what to see, so it is left alone.
+  const hasFilters = Object.values(filters).some(Boolean) || initialNear;
+  if (!hasFilters) {
+    const place = ipPlaceFromHeaders(req.headers);
     if (place) {
       Object.assign(filters, place);
     }

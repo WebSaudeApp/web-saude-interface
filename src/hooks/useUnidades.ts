@@ -24,7 +24,13 @@ export function useUnidadesSearch(
           : ["unidades", key, index + 1],
       ([, , pagina]) =>
         UnidadeService.search(params, pagina as number, pageSize),
-      { revalidateFirstPage: false, revalidateOnFocus: false },
+      {
+        revalidateFirstPage: false,
+        revalidateOnFocus: false,
+        // A failure waits for the visitor's "Tentar novamente" instead of
+        // retrying on its own, which would hammer an API that is struggling.
+        shouldRetryOnError: false,
+      },
     );
 
   // Stable while the pages do not change, so effects keyed on the list
@@ -36,6 +42,8 @@ export function useUnidadesSearch(
   const last = data?.[data.length - 1];
   const isLoadingMore =
     isValidating && data !== undefined && size > data.length;
+  // The first page worked but a later one did not: keep what is on screen.
+  const loadMoreFailed = Boolean(error) && data !== undefined;
 
   return {
     items,
@@ -44,7 +52,12 @@ export function useUnidadesSearch(
     isLoading,
     isLoadingMore,
     error,
+    loadMoreFailed,
+    isRetrying: Boolean(error) && isValidating,
     loadMore: () => setSize(size + 1),
+    // Asks only for the page that is missing; a bare `mutate()` would fetch
+    // every loaded page again.
+    retry: () => void setSize(size),
   };
 }
 
