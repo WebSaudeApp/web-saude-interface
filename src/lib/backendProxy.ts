@@ -4,10 +4,12 @@ import Logger from "@/services/Logger";
 export const backendUrl =
   process.env.WEB_SAUDE_API_URL ?? "https://web-saude-api.onrender.com";
 
-// The free Render plan can take up to ~50 s to wake the API after idling, so
-// the limit leaves room for that and still fails far sooner than Node's own
-// default (about 5 minutes).
-const BACKEND_TIMEOUT_MS = 30000;
+// The free Render plan takes about 45 s to wake the API after idling (43 s
+// measured), so the limit leaves room for that and still fails far sooner
+// than Node's own default (about 5 minutes). The function limit declared by
+// the API routes (`maxDuration`) must be higher than this.
+export const MAX_DURATION_SECONDS = 60;
+const BACKEND_TIMEOUT_MS = (MAX_DURATION_SECONDS - 5) * 1000;
 
 export async function proxyToBackend(
   req: NextApiRequest,

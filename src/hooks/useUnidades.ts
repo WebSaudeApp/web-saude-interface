@@ -16,7 +16,7 @@ export function useUnidadesSearch(
   pageSize: number,
 ) {
   const key = JSON.stringify(params);
-  const { data, error, size, setSize, mutate, isLoading, isValidating } =
+  const { data, error, size, setSize, isLoading, isValidating } =
     useSWRInfinite(
       (index, previous: { paginacao: { temMais: boolean } } | null) =>
         previous && !previous.paginacao.temMais
@@ -53,8 +53,11 @@ export function useUnidadesSearch(
     isLoadingMore,
     error,
     loadMoreFailed,
+    isRetrying: Boolean(error) && isValidating,
     loadMore: () => setSize(size + 1),
-    retry: () => void mutate(),
+    // Asks only for the page that is missing; a bare `mutate()` would fetch
+    // every loaded page again.
+    retry: () => void setSize(size),
   };
 }
 
