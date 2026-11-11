@@ -64,15 +64,6 @@ function schedule(hours: Horario[], open24h: boolean, now: Date) {
   };
 }
 
-// A unit registered without coordinates has no point on the map.
-function coordinates(item: ApiEstabelecimento) {
-  const lat = item.endereco?.latitude;
-  const lng = item.endereco?.longitude;
-  return typeof lat === "number" && typeof lng === "number"
-    ? { lat, lng }
-    : undefined;
-}
-
 export function fromApiEstabelecimento(
   item: ApiEstabelecimento,
   now = new Date(),
@@ -91,33 +82,31 @@ export function fromApiEstabelecimento(
   return {
     id: item.id,
     name: item.nome,
-    type: types[item.tipo?.nome?.toUpperCase() ?? ""] ?? "clinica",
+    type: types[item.tipo.nome] ?? "clinica",
     email: contato(item, "EMAIL"),
     phone: phone ? formatPhone(phone) : undefined,
     whatsapp: whatsapp ? formatPhone(whatsapp) : undefined,
     website: contato(item, "SITE"),
     address: {
-      street: item.endereco?.logradouro ?? "",
-      number: item.endereco?.numero ?? "",
+      street: item.endereco.logradouro,
+      number: item.endereco.numero,
       // The cards show the neighborhood in this slot.
       complement:
-        item.endereco?.bairro ?? item.endereco?.complemento ?? undefined,
-      city: item.endereco?.cidade ?? "",
-      state: item.endereco?.estado ?? "",
-      zipCode: item.endereco?.cep ?? "",
+        item.endereco.bairro ?? item.endereco.complemento ?? undefined,
+      city: item.endereco.cidade,
+      state: item.endereco.estado,
+      zipCode: item.endereco.cep,
     },
-    specialties: (item.especialidades ?? []).map(
-      (especialidade) => especialidade.nome,
-    ),
+    specialties: item.especialidades.map((especialidade) => especialidade.nome),
     hours,
     // "/midias/:id" is served through this site's /api/media proxy.
-    photos: (item.midias ?? [])
+    photos: item.midias
       .filter((midia) => midia.tipo === "FOTO")
       .map((midia) => midia.url.replace(/^\/midias\//, "/api/media/")),
     rating: item.notaMedia ?? 0,
     reviewCount: item.totalReviews ?? 0,
     distanceKm: item.distanciaKm ?? 0,
-    location: coordinates(item),
+    location: { lat: item.endereco.latitude, lng: item.endereco.longitude },
     scheduleLabel: label,
     insurances: [],
     open24h,
