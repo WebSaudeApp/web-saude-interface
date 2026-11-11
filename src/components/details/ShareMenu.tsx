@@ -1,11 +1,12 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { alertService } from "@/services/AlertService";
 
 type ShareMenuProps = {
   name: string;
 };
 
-type ShareTarget = { label: string; href: string };
+// `newTab` is false for mailto:, which would only leave an empty tab behind.
+type ShareTarget = { label: string; href: string; newTab: boolean };
 
 function shareTargets(url: string, text: string): ShareTarget[] {
   const message = `${text} ${url}`;
@@ -13,22 +14,27 @@ function shareTargets(url: string, text: string): ShareTarget[] {
     {
       label: "WhatsApp",
       href: `https://wa.me/?text=${encodeURIComponent(message)}`,
+      newTab: true,
     },
     {
       label: "Telegram",
       href: `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`,
+      newTab: true,
     },
     {
       label: "Facebook",
       href: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
+      newTab: true,
     },
     {
       label: "X",
       href: `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`,
+      newTab: true,
     },
     {
       label: "E-mail",
       href: `mailto:?subject=${encodeURIComponent(text)}&body=${encodeURIComponent(message)}`,
+      newTab: false,
     },
   ];
 }
@@ -42,13 +48,14 @@ function pageUrl() {
 /**
  * Share button. On phones it opens the system share sheet, which lists the
  * visitor's own apps (WhatsApp, Instagram, ...). Where there is none, a small
- * menu offers the main networks and "Copiar link". Instagram has no web share
+ * popover offers the main networks and "Copiar link". Instagram has no web share
  * address, so there it is reached through the system sheet or the copied link.
  */
 export default function ShareMenu({ name }: ShareMenuProps) {
   const [open, setOpen] = useState(false);
   const [url, setUrl] = useState("");
   const rootRef = useRef<HTMLDivElement | null>(null);
+  const popoverId = useId();
   const text = `${name} — Web Saúde`;
 
   useEffect(() => {
@@ -112,8 +119,8 @@ export default function ShareMenu({ name }: ShareMenuProps) {
         type="button"
         onClick={handleClick}
         aria-label="Compartilhar"
-        aria-haspopup="menu"
         aria-expanded={open}
+        aria-controls={open ? popoverId : undefined}
         title="Compartilhar"
       >
         <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -124,20 +131,20 @@ export default function ShareMenu({ name }: ShareMenuProps) {
         </svg>
       </button>
       {open && (
-        <div className="share-menu" role="menu" aria-label="Compartilhar em">
+        <div className="share-menu" id={popoverId}>
           {shareTargets(url, text).map((target) => (
             <a
               key={target.label}
-              role="menuitem"
               href={target.href}
-              target="_blank"
-              rel="noopener noreferrer"
+              {...(target.newTab
+                ? { target: "_blank", rel: "noopener noreferrer" }
+                : {})}
               onClick={() => setOpen(false)}
             >
               {target.label}
             </a>
           ))}
-          <button type="button" role="menuitem" onClick={copyLink}>
+          <button type="button" onClick={copyLink}>
             Copiar link
           </button>
         </div>
