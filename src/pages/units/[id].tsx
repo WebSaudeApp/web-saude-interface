@@ -83,7 +83,7 @@ export default function UnidadeDetalhePage() {
         <title>{`Web Saúde — ${unidade.name}`}</title>
       </Head>
       <div className="details" id="detalhe">
-        <UnidadeDetails unidade={unidade} />
+        <UnidadeDetails key={unidade.id} unidade={unidade} />
       </div>
     </>
   );

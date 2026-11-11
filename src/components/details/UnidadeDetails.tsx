@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { unidadeTypeLabels } from "@/configs/DisplayFields";
@@ -59,13 +59,10 @@ export default function UnidadeDetails({ unidade }: UnidadeDetailsProps) {
   const { user } = useAuth();
   const [isFavorite, toggleFavorite] = useFavorite(unidade.id);
 
-  const fotos = unidade.photos ?? [];
-
+  const fotos = unidade.photos;
+  // The page remounts this component per unit (`key`), so the first photo is
+  // only needed at the start.
   const [activePhoto, setActivePhoto] = useState<string | undefined>(fotos[0]);
-
-  useEffect(() => {
-    setActivePhoto(unidade.photos?.[0]);
-  }, [unidade.id, unidade.photos]);
 
   function handleFavorite() {
     if (!user) {
