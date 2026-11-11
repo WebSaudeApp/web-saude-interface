@@ -5,6 +5,7 @@ import {
   UnidadeService,
   type EstabelecimentoSearchParams,
 } from "@/services/UnidadeService";
+import type { Unidade } from "@/types/Entities";
 
 /**
  * Paged search for the infinite scroll: each page comes from the API
@@ -58,7 +59,9 @@ export function useUnidadesSearch(
   };
 }
 
-export function useUnidade(id?: string) {
+// `initial` is the unit the server already put in the HTML; it is shown as is,
+// without asking the API again right after the page loads.
+export function useUnidade(id?: string, initial?: Unidade) {
   return useSWR(
     id ? ["unidade", id] : null,
     () => UnidadeService.getById(id!),
@@ -67,6 +70,8 @@ export function useUnidade(id?: string) {
       // retrying on its own against an API that is struggling.
       shouldRetryOnError: false,
       revalidateOnFocus: false,
+      fallbackData: initial,
+      revalidateOnMount: initial ? false : undefined,
     },
   );
 }

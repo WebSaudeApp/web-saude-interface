@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { unidadeTypeLabels } from "@/configs/DisplayFields";
@@ -96,7 +96,11 @@ export default function UnidadeDetails({ unidade }: UnidadeDetailsProps) {
   // The API only lists the days the unit opens; a missing day is closed. A
   // unit with no hours at all has not told us, which is not the same as closed.
   const hasHours = unidade.open24h || unidade.hours.length > 0;
-  const today = new Date().getDay();
+  // "Today" and "open now" depend on the visitor's clock and time zone. The
+  // server renders in UTC, so they only show once the page is in the browser.
+  const [now, setNow] = useState<Date | null>(null);
+  useEffect(() => setNow(new Date()), []);
+  const today = now?.getDay();
   const weekHours = weekDays.map(({ day, label }) => {
     const hour = unidade.hours.find((item) => item.weekday === day);
     let value = "Fechado";
@@ -140,9 +144,13 @@ export default function UnidadeDetails({ unidade }: UnidadeDetailsProps) {
           {unidadeTypeLabels[unidade.type] ?? unidade.type}
         </span>
         {hasHours ? (
-          <span className={`chip ${unidade.openNow ? "chip-ok" : "chip-warn"}`}>
-            {unidade.openNow ? "Aberto agora" : "Fechado agora"}
-          </span>
+          now && (
+            <span
+              className={`chip ${unidade.openNow ? "chip-ok" : "chip-warn"}`}
+            >
+              {unidade.openNow ? "Aberto agora" : "Fechado agora"}
+            </span>
+          )
         ) : (
           <span className="chip chip-muted">Horário não informado</span>
         )}
