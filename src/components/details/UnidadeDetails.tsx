@@ -7,6 +7,7 @@ import ShareMenu from "@/components/details/ShareMenu";
 import UnitMap from "@/components/details/UnitMap";
 import { useAuth } from "@/hooks/useAuth";
 import { useFavorite } from "@/hooks/useFavorite";
+import { arrivedFromSearch } from "@/lib/searchOrigin";
 import { formatStars } from "@/lib/stars";
 import { alertService } from "@/services/AlertService";
 import type { Unidade } from "@/types/Entities";
@@ -118,7 +119,18 @@ export default function UnidadeDetails({ unidade }: UnidadeDetailsProps) {
 
   return (
     <>
-      <Link className="det-back" href={publicRoutes.home}>
+      {/* Back to the filtered list when the visitor came from it; a shared
+          link has no list behind it, so it goes to the plain search. */}
+      <Link
+        className="det-back"
+        href={publicRoutes.home}
+        onClick={(event) => {
+          if (arrivedFromSearch()) {
+            event.preventDefault();
+            router.back();
+          }
+        }}
+      >
         ← Voltar para a busca
       </Link>
 
