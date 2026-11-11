@@ -4,6 +4,11 @@ import Logger from "@/services/Logger";
 export const backendUrl =
   process.env.WEB_SAUDE_API_URL ?? "https://web-saude-api.onrender.com";
 
+// The free Render plan can take up to ~50 s to wake the API after idling, so
+// the limit leaves room for that and still fails far sooner than Node's own
+// default (about 5 minutes).
+const BACKEND_TIMEOUT_MS = 30000;
+
 export async function proxyToBackend(
   req: NextApiRequest,
   res: NextApiResponse,
@@ -30,12 +35,17 @@ export async function proxyToBackend(
           : {}),
       },
       body: req.method === "GET" ? undefined : JSON.stringify(req.body ?? {}),
+      signal: AbortSignal.timeout(BACKEND_TIMEOUT_MS),
     });
 
     const payload = await response.json().catch(() => ({}));
     res.status(response.status).json(payload);
   } catch (error) {
     Logger.error("Falha ao falar com o backend", error);
+    if (error instanceof DOMException && error.name === "TimeoutError") {
+      res.status(504).json({ message: "Backend demorou para responder" });
+      return;
+    }
     res.status(502).json({ message: "Backend indisponível" });
   }
 }

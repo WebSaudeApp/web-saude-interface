@@ -18,6 +18,7 @@ const weekdays: Record<ApiDiaSemana, number> = {
 const types: Record<string, UnidadeTipo> = {
   HOSPITAL: "hospital",
   CLINICA: "clinica",
+  PRONTO_ATENDIMENTO: "pronto_atendimento",
 };
 
 // Front type -> value expected by the API `tipo` filter.
