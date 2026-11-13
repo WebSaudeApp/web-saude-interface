@@ -52,3 +52,25 @@ export type ApiEspecialidade = {
   id: string;
   nome: string;
 };
+
+export type ApiPapelUsuario = "PACIENTE" | "GESTOR" | "ADMIN";
+
+export type ApiStatusUsuario = "ATIVO" | "INATIVO" | "PENDENTE";
+
+export type ApiUsuario = {
+  id: string;
+  nome: string;
+  email: string;
+  telefone?: string | null;
+  papel: ApiPapelUsuario;
+  status: ApiStatusUsuario;
+  criadoEm?: string;
+  avatarUrl?: string | null;
+};
+
+export type ApiAuthTokens = {
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
+  usuario: ApiUsuario;
+};

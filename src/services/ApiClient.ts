@@ -17,6 +17,18 @@ function buildUrl(path: string, query?: RequestOptions["query"]) {
   return `${url.pathname}${url.search}`;
 }
 
+export class ApiError extends Error {
+  status: number;
+  data: unknown;
+
+  constructor(message: string, status: number, data?: unknown) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+    this.data = data;
+  }
+}
+
 export async function apiClient<T>(path: string, options: RequestOptions = {}) {
   const headers: HeadersInit = {
     "Content-Type": "application/json",
@@ -33,9 +45,20 @@ export async function apiClient<T>(path: string, options: RequestOptions = {}) {
   });
 
   if (!response.ok) {
-    const message = `Falha em ${path}: ${response.status}`;
-    Logger.error(message);
-    throw new Error(message);
+    let errorData: any = null;
+    let message = `Falha em ${path}: ${response.status}`;
+    try {
+      errorData = await response.json();
+      if (typeof errorData?.message === "string") {
+        message = errorData.message;
+      } else if (Array.isArray(errorData?.message)) {
+        message = errorData.message.join(", ");
+      }
+    } catch {
+      // ignore
+    }
+    Logger.error(`${message} (${response.status})`);
+    throw new ApiError(message, response.status, errorData);
   }
 
   if (response.status === 204) {

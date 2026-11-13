@@ -4,6 +4,7 @@ import { proxyToBackend } from "@/lib/backendProxy";
 const authMap: Record<string, string> = {
   login: "/auth/login",
   register: "/auth/register",
+  google: "/auth/google",
   "verify-email": "/auth/verify-email",
   "recover-password": "/auth/recover-password",
 };
